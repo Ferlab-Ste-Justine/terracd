@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 )
 
 func PathExists(path string) (bool, error) {
@@ -85,4 +86,39 @@ func MergeDirs(destDir string, sourceDirs []string) error {
 	}
 
 	return nil
+}
+
+func FindFiles(dir string, pattern string) ([]string, error) {
+	matches := []string{}
+
+	elems, readDirErr := ioutil.ReadDir(dir)
+	if readDirErr != nil {
+		return matches, readDirErr
+	}
+
+	for _, elem := range elems {
+		elemPath := path.Join(dir, elem.Name())
+		elemInfo, err := os.Stat(elemPath)
+		if err != nil {
+			return matches, err
+		}
+
+		if elemInfo.IsDir() {
+			subMatches, err := FindFiles(elemPath, pattern)
+			if err != nil {
+				return matches, err
+			}
+			matches = append(matches, subMatches...)
+		} else {
+			match, err := filepath.Match(path.Join(dir, pattern), elemPath)
+			if err != nil {
+				return matches, err
+			}
+			if match {
+				matches = append(matches, elemPath)
+			}
+		}
+	}
+
+	return matches, nil
 }

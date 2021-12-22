@@ -2,13 +2,15 @@
 
 This is a continuous delivery tool for terraform that supports a gitops methodology.
 
-The tool merge several sources of terraform files together (git repo as well as filesystem), before applying the final result, allowing any files containing secrets (ex: provider, backend, etc) to be separated from the version-controlled files.
+terracd merge several sources of terraform files together (git repo as well as filesystem), before applying the final result, allowing any files containing secrets (ex: provider, backend, etc) to be separated from the version-controlled files.
 
-The tool runs a single iteration and then exits, relying on an external scheduler like systemd, kubernetes or cron to schedule recurrence.
+terracd runs a single iteration and then exits, relying on an external scheduler like systemd, kubernetes or cron to schedule recurrence.
 
 # Usage
 
-The tool expects a file named **config.yml** to be present in its running directory.
+## Basics
+
+terracd expects a file named **config.yml** to be present in its running directory.
 
 The file has the following top-level fields:
 - **terraform_path**: Path to the terraform binary
@@ -41,10 +43,95 @@ sources:
   - dir: "/home/myuser/terracd-test/dir2"
 ```
 
+## Resource Protection
+
+terracd supports resource protection to circumvent a current limitation in terraform when managing prevent_destroy flags in modules: https://github.com/hashicorp/terraform/issues/18367
+
+You can put yaml files in your terraform code that has the following naming convention:
+
+```
+<some custom prefix>.terracd-fo.yml
+```
+
+The file has the following format:
+
+```
+forbidden_operations:
+  - resource_address: <Address of the resource>
+    operations: [<operations to forbid on the resource: create, delete or update>]
+    provider: <optionally specify for the provider this applies to>
+  - <repeat for more resources>
+```
+
+For example, assume I have the following, totally useless purely illustrative, module in my terraform code:
+
+```
+file_module/
+  main.tf
+  variables.tf
+```
+
+**variables.tf**:
+
+```
+variable "content" {
+  description = "Content of the file"
+  type = string
+}
+
+variable "name" {
+  description = "Name of the file"
+  type = string
+}
+```
+
+**main.tf**:
+
+```
+resource "local_file" "file" {
+  content         = var.content
+  file_permission = "0660"
+  filename        = pathexpand("~/Projects/terracd-test/${var.name}")
+}
+```
+
+Assume that I have the following code in my top-level terraform code:
+
+```
+module "filemon" {
+    source = "./file_module"
+    name = "filemon"
+    content = "filemon"
+}
+```
+
+And finally, assume that I have the following file named **file.terracd-fo.yml**:
+
+```
+forbidden_operations:
+  - resource_address: "module.filemon.local_file.file"
+    operations: ["delete"]
+```
+
+If I change my module invocation to this:
+
+```
+module "filemon" {
+    source = "./file_module"
+    name = "filemon"
+    content = "filemon2"
+}
+```
+
+I'll get the following runtime error with terracd:
+
+```
+panic: Aborting as forbidden operation is about to be performed on protected resource "module.filemon.local_file.file"
+```
+
 # Missing Functionality
 
 The following functionality is planed, but not yet implemented:
 - Support for signed commits
-- Support for "prevent destroy" in the tool's configuration to circumvent this current limitation of Terraform: https://github.com/hashicorp/terraform/issues/18367
 - Support for fluentd logger
 - Support for running terraform plan on pull requests (at least for Github, probably for Gitlab and Gitea as well)
