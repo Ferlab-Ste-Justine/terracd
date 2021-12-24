@@ -36,8 +36,8 @@ func getPublicKeys(sshKeyPath string, knownHostsPath string) (*ssh.PublicKeys, e
 	return publicKeys, nil
 }
 
-func cloneRepo(dir string, url string, ref string, pk *ssh.PublicKeys) error {
-	_, cloneErr := gogit.PlainClone(dir, false, &gogit.CloneOptions{
+func cloneRepo(dir string, url string, ref string, pk *ssh.PublicKeys) (*gogit.Repository, error) {
+	repo, cloneErr := gogit.PlainClone(dir, false, &gogit.CloneOptions{
 		Auth:              pk,
 		RemoteName:        "origin",
 		URL:               url,
@@ -50,22 +50,22 @@ func cloneRepo(dir string, url string, ref string, pk *ssh.PublicKeys) error {
 		Tags:              gogit.NoTags,
 	})
 	if cloneErr != nil {
-		return errors.New(fmt.Sprintf("Error cloning in directory \"%s\": %s", dir, cloneErr.Error()))
+		return repo, errors.New(fmt.Sprintf("Error cloning in directory \"%s\": %s", dir, cloneErr.Error()))
 	}
 
 	fmt.Println(fmt.Sprintf("Cloned branch \"%s\" of repo \"%s\"", ref, url))
-	return nil
+	return repo, nil
 }
 
-func pullRepo(dir string, url string, ref string, pk *ssh.PublicKeys) error {
+func pullRepo(dir string, url string, ref string, pk *ssh.PublicKeys) (*gogit.Repository, error) {
 	repo, gitErr := gogit.PlainOpen(dir)
 	if gitErr != nil {
-		return errors.New(fmt.Sprintf("Error accessing repo in directory \"%s\": %s", dir, gitErr.Error()))
+		return repo, errors.New(fmt.Sprintf("Error accessing repo in directory \"%s\": %s", dir, gitErr.Error()))
 	}
 
 	worktree, worktreeErr := repo.Worktree()
 	if worktreeErr != nil {
-		return errors.New(fmt.Sprintf("Error accessing worktree in directory \"%s\": %s", dir, worktreeErr.Error()))
+		return repo, errors.New(fmt.Sprintf("Error accessing worktree in directory \"%s\": %s", dir, worktreeErr.Error()))
 	}
 
 	pullErr := worktree.Pull(&gogit.PullOptions{
@@ -79,7 +79,7 @@ func pullRepo(dir string, url string, ref string, pk *ssh.PublicKeys) error {
 		Force:             true,
 	})
 	if pullErr != nil && pullErr.Error() != gogit.NoErrAlreadyUpToDate.Error() {
-		return errors.New(fmt.Sprintf("Error pulling latest changes in directory \"%s\": %s", dir, pullErr.Error()))
+		return repo, errors.New(fmt.Sprintf("Error pulling latest changes in directory \"%s\": %s", dir, pullErr.Error()))
 	}
 
 	if pullErr != nil && pullErr.Error() == gogit.NoErrAlreadyUpToDate.Error() {
@@ -87,28 +87,52 @@ func pullRepo(dir string, url string, ref string, pk *ssh.PublicKeys) error {
 	} else {
 		head, headErr := repo.Head()
 		if headErr != nil {
-			return errors.New(fmt.Sprintf("Error accessing top commit in directory \"%s\": %s", dir, headErr.Error()))
+			return repo, errors.New(fmt.Sprintf("Error accessing top commit in directory \"%s\": %s", dir, headErr.Error()))
 		}
 		fmt.Println(fmt.Sprintf("Branch \"%s\" of repo \"%s\" was updated to commit %s", ref, url, head.Hash()))
 	}
 
-	return nil
+	return repo, nil
 }
 
-func SyncGitRepo(dir string, url string, ref string, sshKeyPath string, knownHostsPath string) error {
+func SyncGitRepo(dir string, url string, ref string, sshKeyPath string, knownHostsPath string) (*gogit.Repository, error) {
 	pk, pkErr := getPublicKeys(sshKeyPath, knownHostsPath)
 	if pkErr != nil {
-		return pkErr
+		return nil, pkErr
 	}
 
 	_, err := os.Stat(path.Join(dir, ".git"))
 	if err != nil {
 		if !os.IsNotExist(err) {
-			return errors.New(fmt.Sprintf("Error accessing repo directory's .git sub-directory: %s", dir, err.Error()))
+			return nil, errors.New(fmt.Sprintf("Error accessing repo directory's .git sub-directory: %s", dir, err.Error()))
 		}
 
 		return cloneRepo(dir, url, ref, pk)
 	}
 
 	return pullRepo(dir, url, ref, pk)
+}
+
+func VerifyTopCommit(repo *gogit.Repository, armoredKeyrings []string) error {
+	head, headErr := repo.Head()
+	if headErr != nil {
+		return errors.New(fmt.Sprintf("Error accessing repo head: %s", headErr.Error()))
+	}
+
+	commit, commitErr := repo.CommitObject(head.Hash())
+	if commitErr != nil {
+		return errors.New(fmt.Sprintf("Error accessing repo top commit: %s", commitErr.Error()))
+	}
+
+	for _, armoredKeyring := range armoredKeyrings {
+		entity, err := commit.Verify(armoredKeyring)
+		if err == nil {
+			for _, identity := range entity.Identities {
+				fmt.Println(fmt.Sprintf("Validated top commit \"%s\" is signed by user \"%s\"", head.Hash(), (*identity).Name))
+			}
+			return nil
+		}
+	}
+
+	return errors.New(fmt.Sprintf("Top commit \"%s\" isn't signed with any of the trusted keys", head.Hash()))
 }

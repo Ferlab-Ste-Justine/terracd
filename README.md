@@ -26,6 +26,7 @@ Each source can take one of the following two forms:
       auth:
         ssh_key_path: "<ssh key that has read access to the repo>"
         known_hosts_path: "<known host file containing the expect fingerprint of git server>"
+      gpg_public_keys_paths: <Optional list of armored keyrings to validate signature of latest commit>
 ```
 
 Example of config file:
@@ -40,6 +41,8 @@ sources:
       auth:
         ssh_key_path: "/home/myuser/terracd/id_rsa"
         known_hosts_path: "/home/myuser/terracd/known_hosts"
+      gpg_public_keys_paths:
+        - /home/myuser/myarmoredkeyring.asc
   - dir: "/home/myuser/terracd-test/dir2"
 ```
 
@@ -131,7 +134,6 @@ panic: Aborting as forbidden operation is about to be performed on protected res
 
 # Missing Functionality
 
-The following functionality is planed, but not yet implemented:
-- Support for signed commits
-- Support for fluentd logger
-- Support for running terraform plan on pull requests (at least for Github, probably for Gitlab and Gitea as well)
+The following functionality is planned, but not yet implemented:
+  - Support for fluentd logger
+  - Support for running a terraform plan on branches whose name follow a given pattern

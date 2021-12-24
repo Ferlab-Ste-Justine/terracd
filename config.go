@@ -13,10 +13,11 @@ type ConfigSourceRepoAuth struct {
 }
 
 type ConfigSourceRepo struct {
-	Url  string
-	Ref  string
-	Path string
-	Auth ConfigSourceRepoAuth
+	Url                string
+	Ref                string
+	Path               string
+	Auth               ConfigSourceRepoAuth
+	GpgPublicKeysPaths []string	`yaml:"gpg_public_keys_paths"`
 }
 
 type ConfigSource struct {

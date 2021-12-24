@@ -48,11 +48,26 @@ func syncConfigRepos(dir string, c Config) error {
 					return errors.New(fmt.Sprintf("Error creating repo directory \"%s\": %s", repoDir, mkdirErr.Error()))
 				}
 			}
-	
-			err = git.SyncGitRepo(repoDir, source.Repo.Url, source.Repo.Ref, source.Repo.Auth.SshKeyPath, source.Repo.Auth.KnownHostsPath)
-			if err != nil {
-				return errors.New(fmt.Sprintf("Error updating branch \"%s\" of repo \"%s\": %s", source.Repo.Ref, source.Repo.Url, err.Error()))
+
+			armoredKeyrings := []string{}
+			for _, armoredKeyRingPath := range source.Repo.GpgPublicKeysPaths {
+				armoredKeyring, err := os.ReadFile(armoredKeyRingPath)
+				if err != nil {
+					return errors.New(fmt.Sprintf("Error reading armored keyring \"%s\": %s", armoredKeyRingPath, err.Error()))
+				}
+				armoredKeyrings = append(armoredKeyrings, string(armoredKeyring))
 			}
+
+			repo, syncErr := git.SyncGitRepo(repoDir, source.Repo.Url, source.Repo.Ref, source.Repo.Auth.SshKeyPath, source.Repo.Auth.KnownHostsPath)
+			if syncErr != nil {
+				return errors.New(fmt.Sprintf("Error updating branch \"%s\" of repo \"%s\": %s", source.Repo.Ref, source.Repo.Url, syncErr.Error()))
+			}
+
+			if len(armoredKeyrings) > 0 {
+				return git.VerifyTopCommit(repo, armoredKeyrings)
+			}
+
+			return nil
 		}
 	}
 
