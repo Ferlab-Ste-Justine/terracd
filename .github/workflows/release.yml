@@ -1,0 +1,108 @@
+on:
+  push:
+    tags:
+      - 'v*'
+name: Upload Artifacts
+jobs:
+  upload:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16.x
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
+      - name: Build Linux Amd64 Binary
+        run: |
+          mkdir linux-amd64
+          env GOOS=linux GOARCH=amd64 go build -o linux-amd64/sshtunnel
+          zip -r linux-amd64.zip linux-amd64
+        env:
+          VERSION: ${{ steps.get_version.outputs.VERSION }}
+      - name: Build Linux arm64 Binary
+        run: |
+          mkdir linux-arm64
+          env GOOS=linux GOARCH=arm64 go build -o linux-arm64/sshtunnel
+          zip -r linux-arm64.zip linux-arm64
+        env:
+          VERSION: ${{ steps.get_version.outputs.VERSION }}
+      - name: Build Macos amd64 Binary
+        run: |
+          mkdir macos-amd64
+          env GOOS=darwin GOARCH=amd64 go build -o macos-amd64/sshtunnel
+          zip -r macos-amd64.zip macos-amd64
+        env:
+          VERSION: ${{ steps.get_version.outputs.VERSION }}
+      - name: Build Windows adm64 Binary
+        run: |
+          mkdir windows-amd64
+          env GOOS=windows GOARCH=amd64 go build -o windows-amd64/sshtunnel.exe
+          zip -r windows-amd64.zip windows-amd64
+        env:
+          VERSION: ${{ steps.get_version.outputs.VERSION }}
+      - name: Build Windows 386 Binary
+        run: |
+          mkdir windows-386
+          env GOOS=windows GOARCH=386 go build -o windows-386/sshtunnel.exe
+          zip -r windows-386.zip windows-386
+        env:
+          VERSION: ${{ steps.get_version.outputs.VERSION }}
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+      - name: Upload Linux Amd64 Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./linux-amd64.zip
+          asset_name: linux-amd64.zip
+          asset_content_type: application/zip
+      - name: Upload Linux Arm64 Release Asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./linux-arm64.zip
+          asset_name: linux-arm64.zip
+          asset_content_type: application/zip
+      - name: Upload Macos Amd64 Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./macos-amd64.zip
+          asset_name: macos-amd64.zip
+          asset_content_type: application/zip
+      - name: Upload Windows Amd64 Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./windows-amd64.zip
+          asset_name: windows-amd64.zip
+          asset_content_type: application/zip
+      - name: Upload Windows 386 Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./windows-386.zip
+          asset_name: windows-386.zip
+          asset_content_type: application/zip
