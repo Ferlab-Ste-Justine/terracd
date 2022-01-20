@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path"
 
@@ -48,7 +49,8 @@ func main() {
 	applyExists, applyExistsErr := fs.PathExists(applyDir)
 	handleErr(applyExistsErr)
 	if applyExists {
-		panic("Error: Apply directory already exists.")
+		fmt.Println("Warning: Apply directory found from prior iteration. Will clean it up.")
+		cleanup(applyDir, stateDir)
 	}
 	fs.AssurePrivateDir(reposDir)
 	fs.AssurePrivateDir(stateDir)
