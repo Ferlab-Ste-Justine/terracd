@@ -56,15 +56,15 @@ func cloneRepo(dir string, url string, ref string, pk *ssh.PublicKeys) (*gogit.R
 	return repo, nil
 }
 
-func pullRepo(dir string, url string, ref string, pk *ssh.PublicKeys) (*gogit.Repository, error) {
+func pullRepo(dir string, url string, ref string, pk *ssh.PublicKeys) (*gogit.Repository, bool, error) {
 	repo, gitErr := gogit.PlainOpen(dir)
 	if gitErr != nil {
-		return repo, errors.New(fmt.Sprintf("Error accessing repo in directory \"%s\": %s", dir, gitErr.Error()))
+		return repo, true, errors.New(fmt.Sprintf("Error accessing repo in directory \"%s\": %s", dir, gitErr.Error()))
 	}
 
 	worktree, worktreeErr := repo.Worktree()
 	if worktreeErr != nil {
-		return repo, errors.New(fmt.Sprintf("Error accessing worktree in directory \"%s\": %s", dir, worktreeErr.Error()))
+		return repo, true, errors.New(fmt.Sprintf("Error accessing worktree in directory \"%s\": %s", dir, worktreeErr.Error()))
 	}
 
 	pullErr := worktree.Pull(&gogit.PullOptions{
@@ -77,35 +77,37 @@ func pullRepo(dir string, url string, ref string, pk *ssh.PublicKeys) (*gogit.Re
 		Force:             true,
 	})
 	if pullErr != nil && pullErr.Error() != gogit.NoErrAlreadyUpToDate.Error() {
-		return repo, errors.New(fmt.Sprintf("Error pulling latest changes in directory \"%s\": %s", dir, pullErr.Error()))
+		fastForwardProblems := pullErr.Error() == gogit.ErrNonFastForwardUpdate.Error()
+		return repo, fastForwardProblems, errors.New(fmt.Sprintf("Error pulling latest changes in directory \"%s\": %s", dir, pullErr.Error()))
 	}
-
+	
 	if pullErr != nil && pullErr.Error() == gogit.NoErrAlreadyUpToDate.Error() {
 		fmt.Println(fmt.Sprintf("Branch \"%s\" of repo \"%s\" is up-to-date", ref, url))
 	} else {
 		head, headErr := repo.Head()
 		if headErr != nil {
-			return repo, errors.New(fmt.Sprintf("Error accessing top commit in directory \"%s\": %s", dir, headErr.Error()))
+			return repo, true, errors.New(fmt.Sprintf("Error accessing top commit in directory \"%s\": %s", dir, headErr.Error()))
 		}
 		fmt.Println(fmt.Sprintf("Branch \"%s\" of repo \"%s\" was updated to commit %s", ref, url, head.Hash()))
 	}
 
-	return repo, nil
+	return repo, false, nil
 }
 
-func SyncGitRepo(dir string, url string, ref string, sshKeyPath string, knownHostsPath string) (*gogit.Repository, error) {
+func SyncGitRepo(dir string, url string, ref string, sshKeyPath string, knownHostsPath string) (*gogit.Repository, bool, error) {
 	pk, pkErr := getPublicKeys(sshKeyPath, knownHostsPath)
 	if pkErr != nil {
-		return nil, pkErr
+		return nil, false, pkErr
 	}
 
 	_, err := os.Stat(path.Join(dir, ".git"))
 	if err != nil {
 		if !os.IsNotExist(err) {
-			return nil, errors.New(fmt.Sprintf("Error accessing repo directory's .git sub-directory: %s", dir, err.Error()))
+			return nil, false, errors.New(fmt.Sprintf("Error accessing repo directory's .git sub-directory: %s", dir, err.Error()))
 		}
 
-		return cloneRepo(dir, url, ref, pk)
+		repo, cloneErr := cloneRepo(dir, url, ref, pk)
+		return repo, false, cloneErr
 	}
 
 	return pullRepo(dir, url, ref, pk)
