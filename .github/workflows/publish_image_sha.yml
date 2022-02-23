@@ -1,0 +1,20 @@
+name: Publish Images Using Commit Hash
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish:
+    name: Publish Images
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Publish Terracd Image
+      uses: Ferlab-Ste-Justine/action-push-image@v2
+      with:
+        username: ${{ secrets.FERLAB_DOCKER_HUB_USER }}
+        password: ${{ secrets.FERLAB_DOCKER_HUB_TOKEN }}
+        image: ferlabcrsj/terracd
+        tag_format: "{sha}-{timestamp}"
