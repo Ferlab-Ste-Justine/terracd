@@ -10,7 +10,7 @@ terracd runs a single iteration and then exits, relying on an external scheduler
 
 ## Basics
 
-terracd expects a file named **config.yml** to be present in its running directory.
+By default, terracd expects a file named **config.yml** to be present in its running directory. You can change the expected directory or name of the file by setting the **TERRACD_CONFIG_FILE** environment variable.
 
 The file has the following top-level fields:
 - **terraform_path**: Path to the terraform binary

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -30,10 +31,18 @@ type Config struct {
 	Sources       []ConfigSource
 }
 
+func getConfigFilePath() string {
+	path := os.Getenv("TERRACD_CONFIG_FILE")
+	if path == "" {
+	  return "config.yml"
+	}
+	return path
+}
+
 func getConfig() (Config, error) {
 	var c Config
 
-	b, err := ioutil.ReadFile("config.yml")
+	b, err := ioutil.ReadFile(getConfigFilePath())
 	if err != nil {
 		return c, errors.New(fmt.Sprintf("Error reading the configuration file: %s", err.Error()))
 	}
