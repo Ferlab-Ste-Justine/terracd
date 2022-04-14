@@ -9,12 +9,12 @@ func terraformApply(dir string, conf Config) error {
 	planName := "terracd-plan"
 	forbiddenOpsFsPattern := "*.terracd-fo.yml"
 
-	initErr := terraform.Init(dir, conf.TerraformPath)
+	initErr := terraform.Init(dir, conf.TerraformPath, conf.Timeouts.TerraformInit)
 	if initErr != nil {
 		return initErr
 	}
 
-	changes, planErr := terraform.Plan(dir, planName, conf.TerraformPath)
+	changes, planErr := terraform.Plan(dir, planName, conf.TerraformPath, conf.Timeouts.TerraformPlan)
 	if planErr != nil {
 		return planErr
 	}
@@ -35,7 +35,7 @@ func terraformApply(dir string, conf Config) error {
 			return checkErr
 		}
 
-		applyErr := terraform.Apply(dir, planName, conf.TerraformPath)
+		applyErr := terraform.Apply(dir, planName, conf.TerraformPath, conf.Timeouts.TerraformApply)
 		if applyErr != nil {
 			return applyErr
 		}

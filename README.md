@@ -14,25 +14,37 @@ By default, terracd expects a file named **config.yml** to be present in its run
 
 The file has the following top-level fields:
 - **terraform_path**: Path to the terraform binary
+- **timeouts**: Execution timeouts for the various stages of the terraform lifecycle
 - **sources**: Array of terraform file sources to be merged together and applied on
 
-Each source can take one of the following two forms:
+The **timeouts** entry has the following fields (each taking the duration string format, see: https://pkg.go.dev/time#ParseDuration):
+  - **terraform_init**: Execution timeout for the **terraform init** operation.
+  - **terraform_plan**: Execution timeout for the **terraform_plan** operation.
+  - **terraform_apply**: Execution timeout for the **terraform_apply** operation.
+
+Note that the default behavior is not to apply any timeouts for fields that are omitted.
+
+Each **sources** entry can take one of the following two forms:
 ```
 - dir: "<local directory with terraform scripts>"
-  - repo:
-      url: "<git repo ssh url>"
-      ref: "<git repo branch>"
-      path: "<path in git repo where scripts are>"
-      auth:
-        ssh_key_path: "<ssh key that has read access to the repo>"
-        known_hosts_path: "<known host file containing the expect fingerprint of git server>"
-      gpg_public_keys_paths: <Optional list of armored keyrings to validate signature of latest commit>
+- repo:
+    url: "<git repo ssh url>"
+    ref: "<git repo branch>"
+    path: "<path in git repo where scripts are>"
+    auth:
+      ssh_key_path: "<ssh key that has read access to the repo>"
+      known_hosts_path: "<known host file containing the expect fingerprint of git server>"
+    gpg_public_keys_paths: <Optional list of armored keyrings to validate signature of latest commit>
 ```
 
 Example of config file:
 
 ```
 terraform_path: /home/myuser/bin/terraform
+timeouts:
+  terraform_init: "15m"
+  terraform_plan: "15m"
+  terraform_apply: "1h"
 sources:
   - repo:
       url: "git@github.com:mygituser/terracd-test.git"

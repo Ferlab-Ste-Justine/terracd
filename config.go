@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -26,9 +27,16 @@ type ConfigSource struct {
 	Repo ConfigSourceRepo
 }
 
+type ConfigTimeouts struct {
+	TerraformInit time.Duration `yaml:"terraform_init"`
+	TerraformPlan time.Duration `yaml:"terraform_plan"`
+	TerraformApply time.Duration `yaml:"terraform_apply"`
+}
+
 type Config struct {
 	TerraformPath string	`yaml:"terraform_path"`
 	Sources       []ConfigSource
+	Timeouts      ConfigTimeouts
 }
 
 func getConfigFilePath() string {

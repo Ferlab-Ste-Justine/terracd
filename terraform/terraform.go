@@ -6,12 +6,21 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"time"
 
 	"github.com/hashicorp/terraform-exec/tfexec"
 	tfjson "github.com/hashicorp/terraform-json"
 )
 
-func Init(dir string, terraformPath string) error {
+func getContext(timeout time.Duration) (context.Context, context.CancelFunc) {
+	ctx := context.Background()
+	if int64(timeout) == int64(0) {
+		return context.WithCancel(ctx)
+	}
+	return context.WithTimeout(ctx, timeout)
+}
+
+func Init(dir string, terraformPath string, timeout time.Duration) error {
 	tf, err := tfexec.NewTerraform(dir, terraformPath)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Error preparing terraform in directory \"%s\": %s", dir, err.Error()))
@@ -20,7 +29,10 @@ func Init(dir string, terraformPath string) error {
 	tf.SetStdout(os.Stdout)
 	tf.SetStderr(os.Stderr)
 
-	initErr := tf.Init(context.Background(), tfexec.Upgrade(true))
+	ctx, cancel := getContext(timeout)
+	defer cancel()
+
+	initErr := tf.Init(ctx, tfexec.Upgrade(true))
 	if initErr != nil {
 		return errors.New(fmt.Sprintf("Error with terraform init in directory \"%s\": %s", dir, initErr.Error()))
 	}
@@ -28,7 +40,7 @@ func Init(dir string, terraformPath string) error {
 	return nil
 }
 
-func Plan(dir string, planName string, terraformPath string) (bool, error) {
+func Plan(dir string, planName string, terraformPath string, timeout time.Duration) (bool, error) {
 	tf, err := tfexec.NewTerraform(dir, terraformPath)
 	if err != nil {
 		return false, errors.New(fmt.Sprintf("Error preparing terraform in directory \"%s\": %s", dir, err.Error()))
@@ -37,7 +49,10 @@ func Plan(dir string, planName string, terraformPath string) (bool, error) {
 	tf.SetStdout(os.Stdout)
 	tf.SetStderr(os.Stderr)
 
-	changes, planErr := tf.Plan(context.Background(), tfexec.Out(path.Join(dir, planName)))
+	ctx, cancel := getContext(timeout)
+	defer cancel()
+
+	changes, planErr := tf.Plan(ctx, tfexec.Out(path.Join(dir, planName)))
 	if planErr != nil {
 		return false, errors.New(fmt.Sprintf("Error with terraform plan in directory \"%s\": %s", dir, planErr.Error()))
 	}
@@ -45,7 +60,7 @@ func Plan(dir string, planName string, terraformPath string) (bool, error) {
 	return changes, nil
 }
 
-func Apply(dir string, planName string, terraformPath string) error {
+func Apply(dir string, planName string, terraformPath string, timeout time.Duration) error {
 	tf, err := tfexec.NewTerraform(dir, terraformPath)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Error preparing terraform in directory \"%s\": %s", dir, err.Error()))
@@ -54,7 +69,10 @@ func Apply(dir string, planName string, terraformPath string) error {
 	tf.SetStdout(os.Stdout)
 	tf.SetStderr(os.Stderr)
 
-	applyErr := tf.Apply(context.Background(), tfexec.DirOrPlan(path.Join(dir, planName)))
+	ctx, cancel := getContext(timeout)
+	defer cancel()
+
+	applyErr := tf.Apply(ctx, tfexec.DirOrPlan(path.Join(dir, planName)))
 	if applyErr != nil {
 		return errors.New(fmt.Sprintf("Error with terraform apply in directory \"%s\": %s", dir, applyErr.Error()))
 	}
