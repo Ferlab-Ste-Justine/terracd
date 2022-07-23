@@ -14,10 +14,10 @@ func handleErr(err error) {
 	}
 }
 
-func cleanup(applyDir string, stateDir string) {
-	stateSrc := path.Join(applyDir, "terraform.tfstate")
+func cleanup(workDir string, stateDir string) {
+	stateSrc := path.Join(workDir, "terraform.tfstate")
 	stateDest := path.Join(stateDir, "terraform.tfstate")
-	stateBackSrc := path.Join(applyDir, "terraform.tfstate.backup")
+	stateBackSrc := path.Join(workDir, "terraform.tfstate.backup")
 	stateBackDest := path.Join(stateDir, "terraform.tfstate.backup")
 
 	stateSrcExists, stateSrcErr := fs.PathExists(stateSrc)
@@ -34,7 +34,7 @@ func cleanup(applyDir string, stateDir string) {
 		fs.CopyPrivateFile(stateSrc, stateDest)
 	}
 
-	removalErr := os.RemoveAll(applyDir)
+	removalErr := os.RemoveAll(workDir)
 	handleErr(removalErr)
 }
 
@@ -44,18 +44,18 @@ func main() {
 
 	reposDir := path.Join(wd, "repos")
 	stateDir := path.Join(wd, "state")
-	applyDir := path.Join(wd, "apply")
+	workDir := path.Join(wd, "work")
 
-	applyExists, applyExistsErr := fs.PathExists(applyDir)
-	handleErr(applyExistsErr)
-	if applyExists {
-		fmt.Println("Warning: Apply directory found from prior iteration. Will clean it up.")
-		cleanup(applyDir, stateDir)
+	workDirExists, workDirExistsErr := fs.PathExists(workDir)
+	handleErr(workDirExistsErr)
+	if workDirExists {
+		fmt.Println("Warning: Working directory found from prior iteration. Will clean it up.")
+		cleanup(workDir, stateDir)
 	}
 	fs.AssurePrivateDir(reposDir)
 	fs.AssurePrivateDir(stateDir)
-	fs.AssurePrivateDir(applyDir)
-	defer cleanup(applyDir, stateDir)
+	fs.AssurePrivateDir(workDir)
+	defer cleanup(workDir, stateDir)
 
 	config, configErr := getConfig()
 	handleErr(configErr)
@@ -63,9 +63,15 @@ func main() {
 	syncErr := syncConfigRepos(reposDir, config)
 	handleErr(syncErr)
 
-	mergeErr := fs.MergeDirs(applyDir, append(getSourcePaths(reposDir, config), stateDir))
+	mergeErr := fs.MergeDirs(workDir, append(getSourcePaths(reposDir, config), stateDir))
 	handleErr(mergeErr)
 
-	applyErr := terraformApply(applyDir, config)
+	if config.Command == "plan" {
+		planErr := terraformPlan(workDir, config)
+		handleErr(planErr)
+		return
+	}
+
+	applyErr := terraformApply(workDir, config)
 	handleErr(applyErr)
 }

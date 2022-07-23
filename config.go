@@ -37,6 +37,7 @@ type Config struct {
 	TerraformPath string	`yaml:"terraform_path"`
 	Sources       []ConfigSource
 	Timeouts      ConfigTimeouts
+	Command       string
 }
 
 func getConfigFilePath() string {
@@ -57,6 +58,14 @@ func getConfig() (Config, error) {
 	err = yaml.Unmarshal(b, &c)
 	if err != nil {
 		return c, errors.New(fmt.Sprintf("Error parsing the configuration file: %s", err.Error()))
+	}
+
+	if c.Command == "" {
+		c.Command = "apply"
+	}
+
+	if c.Command != "apply" && c.Command != "plan" {
+		return c, errors.New("Valid command values can only be 'plan' or 'apply'")
 	}
 
 	return c, nil
