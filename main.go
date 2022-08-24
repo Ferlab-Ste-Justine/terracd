@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"time"
 
 	"ferlab/terracd/fs"
 )
@@ -65,6 +66,15 @@ func main() {
 
 	mergeErr := fs.MergeDirs(workDir, append(getSourcePaths(reposDir, config), stateDir))
 	handleErr(mergeErr)
+
+	if config.Command == "wait" {
+		waitTime := config.Timeouts.Wait
+		if int64(waitTime) == int64(0) {
+			waitTime, _ = time.ParseDuration("1h")
+		}
+		time.Sleep(waitTime)
+		return
+	}
 
 	if config.Command == "plan" {
 		planErr := terraformPlan(workDir, config)

@@ -16,11 +16,13 @@ The file has the following top-level fields:
 - **terraform_path**: Path to the terraform binary
 - **timeouts**: Execution timeouts for the various stages of the terraform lifecycle
 - **sources**: Array of terraform file sources to be merged together and applied on
+- **command**: Command to execute. Can be **apply** to run **terraform apply**, **plan** to run **terraform plan** and **wait** to simply assemble all the sources together and wait a given duration before exiting (useful for importing resources). Defaults to **apply** if omitted.
 
 The **timeouts** entry has the following fields (each taking the duration string format, see: https://pkg.go.dev/time#ParseDuration):
   - **terraform_init**: Execution timeout for the **terraform init** operation.
   - **terraform_plan**: Execution timeout for the **terraform_plan** operation.
   - **terraform_apply**: Execution timeout for the **terraform_apply** operation.
+  - **wait**: Execution timeout for the **wait** command.
 
 Note that the default behavior is not to apply any timeouts for fields that are omitted.
 

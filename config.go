@@ -28,9 +28,10 @@ type ConfigSource struct {
 }
 
 type ConfigTimeouts struct {
-	TerraformInit time.Duration `yaml:"terraform_init"`
-	TerraformPlan time.Duration `yaml:"terraform_plan"`
+	TerraformInit  time.Duration `yaml:"terraform_init"`
+	TerraformPlan  time.Duration `yaml:"terraform_plan"`
 	TerraformApply time.Duration `yaml:"terraform_apply"`
+	Wait           time.Duration
 }
 
 type Config struct {
@@ -64,7 +65,7 @@ func getConfig() (Config, error) {
 		c.Command = "apply"
 	}
 
-	if c.Command != "apply" && c.Command != "plan" {
+	if c.Command != "apply" && c.Command != "plan" && c.Command != "wait" {
 		return c, errors.New("Valid command values can only be 'plan' or 'apply'")
 	}
 
