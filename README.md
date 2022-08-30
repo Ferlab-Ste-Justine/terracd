@@ -2,7 +2,7 @@
 
 This is a continuous delivery tool for terraform that supports a gitops methodology.
 
-terracd merge several sources of terraform files together (git repo as well as filesystem), before applying the final result, allowing any files containing secrets (ex: provider, backend, etc) to be separated from the version-controlled files.
+terracd merge several sources of terraform files together (git repo as well as filesystem), before running an operation on the final result, allowing any files containing secrets (ex: provider, backend, etc) to be separated from the version-controlled files.
 
 terracd runs a single iteration and then exits, relying on an external scheduler like systemd, kubernetes or cron to schedule recurrence.
 
@@ -16,7 +16,8 @@ The file has the following top-level fields:
 - **terraform_path**: Path to the terraform binary
 - **timeouts**: Execution timeouts for the various stages of the terraform lifecycle
 - **sources**: Array of terraform file sources to be merged together and applied on
-- **command**: Command to execute. Can be **apply** to run **terraform apply**, **plan** to run **terraform plan** and **wait** to simply assemble all the sources together and wait a given duration before exiting (useful for importing resources). Defaults to **apply** if omitted.
+- **command**: Command to execute. Can be **apply** to run **terraform apply**, **plan** to run **terraform plan**, **migrate_backend** to migrate the terraform state to another backend file or **wait** to simply assemble all the sources together and wait a given duration before exiting (useful for importing resources). Defaults to **apply** if omitted.
+- **backend_migration**: Parameters specifying the backend files to rotate when migrating your backend.
 
 The **timeouts** entry has the following fields (each taking the duration string format, see: https://pkg.go.dev/time#ParseDuration):
   - **terraform_init**: Execution timeout for the **terraform init** operation.
@@ -39,10 +40,16 @@ Each **sources** entry can take one of the following two forms:
     gpg_public_keys_paths: <Optional list of armored keyrings to validate signature of latest commit>
 ```
 
-Example of config file:
+The **backend_migration** parameter takes the following fields:
+  - **current_backend**: File name of the current backend to migrate from. It is assumed to be relative filename that will be part of the files assembled in the working directory.
+  - **next_backend**: Absolute file name of the next backend to migrate to. It is assumed to be an absolute path not present in the working directory.
+
+
+Example of a config file to run terraform apply:
 
 ```
 terraform_path: /home/myuser/bin/terraform
+command: apply
 timeouts:
   terraform_init: "15m"
   terraform_plan: "15m"
@@ -58,6 +65,31 @@ sources:
       gpg_public_keys_paths:
         - /home/myuser/myarmoredkeyring.asc
   - dir: "/home/myuser/terracd-test/dir2"
+```
+
+Example of a config file to run a backend migration:
+
+```
+terraform_path: /home/myuser/bin/terraform
+command: migrate_backend
+timeouts:
+  terraform_init: "15m"
+  terraform_plan: "15m"
+  terraform_apply: "1h"
+backend_migration:
+  current_backend: "backend.tf"
+  next_backend: "/home/myuser/nextbackenddir/backend.tf"
+sources:
+  - repo:
+      url: "git@github.com:mygituser/terracd-test.git"
+      ref: "main"
+      path: "dir1"
+      auth:
+        ssh_key_path: "/home/myuser/terracd/id_rsa"
+        known_hosts_path: "/home/myuser/terracd/known_hosts"
+      gpg_public_keys_paths:
+        - /home/myuser/myarmoredkeyring.asc
+  - dir: "/home/myuser/currentbackenddir"
 ```
 
 ## Resource Protection
