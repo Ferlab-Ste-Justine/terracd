@@ -9,15 +9,9 @@ import (
 )
 
 func terraformMigrateBackend(dir string, conf Config) error {
-	statePath := path.Join(dir, "terracd-state")
 	initErr := terraform.Init(dir, conf.TerraformPath, conf.Timeouts.TerraformInit)
 	if initErr != nil {
 		return initErr
-	}
-
-	pullErr := terraform.StatePull(dir, statePath, conf.TerraformPath, conf.Timeouts.TerraformPull)
-	if pullErr != nil {
-		return pullErr
 	}
 
 	currentBackend := path.Join(dir, conf.BackendMigration.CurrentBackend)
@@ -34,11 +28,6 @@ func terraformMigrateBackend(dir string, conf Config) error {
 	initErr = terraform.Init(dir, conf.TerraformPath, conf.Timeouts.TerraformInit)
 	if initErr != nil {
 		return initErr
-	}
-
-	pushErr := terraform.StatePush(dir, statePath, conf.TerraformPath, conf.Timeouts.TerraformPush)
-	if pushErr != nil {
-		return pushErr
 	}
 
 	return nil
