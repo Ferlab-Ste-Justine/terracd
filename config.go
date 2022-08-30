@@ -31,14 +31,22 @@ type ConfigTimeouts struct {
 	TerraformInit  time.Duration `yaml:"terraform_init"`
 	TerraformPlan  time.Duration `yaml:"terraform_plan"`
 	TerraformApply time.Duration `yaml:"terraform_apply"`
+	TerraformPull  time.Duration `yaml:"terraform_pull"`
+	TerraformPush  time.Duration `yaml:"terraform_push"`
 	Wait           time.Duration
 }
 
+type BackendMigration struct {
+	CurrentBackend string `yaml:"current_backend"`
+	NextBackend    string `yaml:"next_backend"`
+}
+
 type Config struct {
-	TerraformPath string	`yaml:"terraform_path"`
-	Sources       []ConfigSource
-	Timeouts      ConfigTimeouts
-	Command       string
+	TerraformPath    string	`yaml:"terraform_path"`
+	Sources          []ConfigSource
+	Timeouts         ConfigTimeouts
+	BackendMigration BackendMigration `yaml:"backend_migration"`
+	Command          string
 }
 
 func getConfigFilePath() string {
@@ -65,8 +73,8 @@ func getConfig() (Config, error) {
 		c.Command = "apply"
 	}
 
-	if c.Command != "apply" && c.Command != "plan" && c.Command != "wait" {
-		return c, errors.New("Valid command values can only be 'plan' or 'apply'")
+	if c.Command != "apply" && c.Command != "plan" && c.Command != "wait" && c.Command != "migrate_backend" {
+		return c, errors.New("Valid command values can only be 'plan', 'apply', 'wait' or 'migrate_backend'")
 	}
 
 	return c, nil

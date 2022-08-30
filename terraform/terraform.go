@@ -115,3 +115,55 @@ func CheckPlan(dir string, planName string, terraformPath string, forbiddenOps [
 
 	return nil
 }
+
+func StatePull(dir string, stateFile string, terraformPath string, timeout time.Duration) (error) {
+	tf, err := tfexec.NewTerraform(dir, terraformPath)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Error preparing terraform in directory \"%s\": %s", dir, err.Error()))
+	}
+
+	tf.SetStdout(os.Stdout)
+	tf.SetStderr(os.Stderr)
+
+	ctx, cancel := getContext(timeout)
+	defer cancel()
+
+	state, pullErr := tf.StatePull(ctx)
+	if pullErr != nil {
+		return errors.New(fmt.Sprintf("Error with terraform state pull in directory \"%s\": %s", dir, pullErr.Error()))
+	}
+
+	f, openErr := os.OpenFile(stateFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0700)
+	if openErr != nil {
+		return errors.New(fmt.Sprintf("Error opening file \"%s\" to store the terraform state: %s", stateFile, openErr.Error()))
+	}
+
+	defer f.Close()
+
+	_, wErr := f.WriteString(state)
+	if wErr != nil {
+		return errors.New(fmt.Sprintf("Error writing to file \"%s\" to store the terraform state: %s", stateFile, wErr.Error()))
+	}
+
+	return nil
+}
+
+func StatePush(dir string, stateFile string, terraformPath string, timeout time.Duration) error {
+	tf, err := tfexec.NewTerraform(dir, terraformPath)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Error preparing terraform in directory \"%s\": %s", dir, err.Error()))
+	}
+
+	tf.SetStdout(os.Stdout)
+	tf.SetStderr(os.Stderr)
+
+	ctx, cancel := getContext(timeout)
+	defer cancel()
+
+	pushErr := tf.StatePush(ctx, stateFile)
+	if pushErr != nil {
+		return errors.New(fmt.Sprintf("Error with terraform state push with state file \"%s\": %s", stateFile, pushErr.Error()))
+	}
+
+	return nil
+}

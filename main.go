@@ -67,21 +67,21 @@ func main() {
 	mergeErr := fs.MergeDirs(workDir, append(getSourcePaths(reposDir, config), stateDir))
 	handleErr(mergeErr)
 
-	if config.Command == "wait" {
+    switch config.Command {
+    case "wait":
 		waitTime := config.Timeouts.Wait
 		if int64(waitTime) == int64(0) {
 			waitTime, _ = time.ParseDuration("1h")
 		}
 		time.Sleep(waitTime)
-		return
-	}
-
-	if config.Command == "plan" {
+    case "plan":
 		planErr := terraformPlan(workDir, config)
 		handleErr(planErr)
-		return
-	}
-
-	applyErr := terraformApply(workDir, config)
-	handleErr(applyErr)
+    case "apply":
+		applyErr := terraformApply(workDir, config)
+		handleErr(applyErr)
+    case "migrate_backend":
+		migrateErr := terraformMigrateBackend(workDir, config)
+		handleErr(migrateErr)
+    }
 }
