@@ -175,11 +175,10 @@ module "filemon" {
 I'll get the following runtime error with terracd:
 
 ```
-panic: Aborting as forbidden operation is about to be performed on protected resource "module.filemon.local_file.file"
+Aborting as forbidden operation is about to be performed on protected resource "module.filemon.local_file.file"
 ```
 
 # Missing Functionality
 
 The following functionality is planned, but not yet implemented:
   - Support for fluentd logger
-  - Support for running a terraform plan on branches whose name follow a given pattern

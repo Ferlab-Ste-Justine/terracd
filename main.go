@@ -9,63 +9,102 @@ import (
 	"ferlab/terracd/fs"
 )
 
-func handleErr(err error) {
-	if err != nil {
-		panic(err.Error())
-	}
-}
-
-func cleanup(workDir string, stateDir string) {
+func cleanup(workDir string, stateDir string) error {
 	stateSrc := path.Join(workDir, "terraform.tfstate")
 	stateDest := path.Join(stateDir, "terraform.tfstate")
 	stateBackSrc := path.Join(workDir, "terraform.tfstate.backup")
 	stateBackDest := path.Join(stateDir, "terraform.tfstate.backup")
 
 	stateSrcExists, stateSrcErr := fs.PathExists(stateSrc)
-	handleErr(stateSrcErr)
+	if stateSrcErr != nil {
+		return stateSrcErr
+	}
 
 	stateBackSrcExists, stateBackSrcErr := fs.PathExists(stateBackSrc)
-	handleErr(stateBackSrcErr)
+	if stateBackSrcErr != nil {
+		return stateBackSrcErr
+	}
 
 	if stateBackSrcExists {
-		fs.CopyPrivateFile(stateBackSrc, stateBackDest)
+		copyErr := fs.CopyPrivateFile(stateBackSrc, stateBackDest)
+		if copyErr != nil {
+			return copyErr
+		}
 	}
 
 	if stateSrcExists {
-		fs.CopyPrivateFile(stateSrc, stateDest)
+		copyErr := fs.CopyPrivateFile(stateSrc, stateDest)
+		if copyErr != nil {
+			return copyErr
+		}
 	}
 
 	removalErr := os.RemoveAll(workDir)
-	handleErr(removalErr)
+	if removalErr != nil {
+		return removalErr
+	}
+
+	return nil
 }
 
-func main() {
+func Exec() error {
 	wd, wdErr := os.Getwd()
-	handleErr(wdErr)
+	if wdErr != nil {
+		return wdErr
+	}
 
 	reposDir := path.Join(wd, "repos")
 	stateDir := path.Join(wd, "state")
 	workDir := path.Join(wd, "work")
 
 	workDirExists, workDirExistsErr := fs.PathExists(workDir)
-	handleErr(workDirExistsErr)
+	if workDirExistsErr != nil {
+		return workDirExistsErr
+	}
 	if workDirExists {
 		fmt.Println("Warning: Working directory found from prior iteration. Will clean it up.")
-		cleanup(workDir, stateDir)
+		cleanupErr := cleanup(workDir, stateDir)
+		if cleanupErr != nil {
+			return cleanupErr
+		}
 	}
-	fs.AssurePrivateDir(reposDir)
-	fs.AssurePrivateDir(stateDir)
-	fs.AssurePrivateDir(workDir)
-	defer cleanup(workDir, stateDir)
+
+	assureErr := fs.AssurePrivateDir(reposDir)
+	if assureErr != nil {
+		return assureErr
+	}
+
+	assureErr = fs.AssurePrivateDir(stateDir)
+	if assureErr != nil {
+		return assureErr
+	}
+
+	assureErr = fs.AssurePrivateDir(workDir)
+	if assureErr != nil {
+		return assureErr
+	}
+
+	defer func() {
+		cleanupErr := cleanup(workDir, stateDir)
+		if cleanupErr != nil {
+			fmt.Printf("Warning: Failed to cleanup working directory at the end of execution: %s.\n", cleanupErr.Error())
+		}
+	}()
 
 	config, configErr := getConfig()
-	handleErr(configErr)
+	if configErr != nil {
+		return configErr
+	}
 
 	syncErr := syncConfigRepos(reposDir, config)
-	handleErr(syncErr)
+	if syncErr != nil {
+		return syncErr
+	}
 
 	mergeErr := fs.MergeDirs(workDir, append(getSourcePaths(reposDir, config), stateDir))
-	handleErr(mergeErr)
+	if mergeErr != nil {
+		return mergeErr
+	}
 
     switch config.Command {
     case "wait":
@@ -76,12 +115,28 @@ func main() {
 		time.Sleep(waitTime)
     case "plan":
 		planErr := terraformPlan(workDir, config)
-		handleErr(planErr)
+		if planErr != nil {
+			return planErr
+		}
     case "apply":
 		applyErr := terraformApply(workDir, config)
-		handleErr(applyErr)
+		if applyErr != nil {
+			return applyErr
+		}
     case "migrate_backend":
 		migrateErr := terraformMigrateBackend(workDir, config)
-		handleErr(migrateErr)
+		if migrateErr != nil {
+			return migrateErr
+		}
     }
+
+	return nil
+}
+
+func main() {
+	err := Exec()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 }

@@ -20,11 +20,8 @@ func PathExists(path string) (bool, error) {
 	return true, nil
 }
 
-func AssurePrivateDir(dir string) {
-	mkdirErr := os.MkdirAll(dir, 0770)
-	if mkdirErr != nil {
-		panic(mkdirErr.Error())
-	}
+func AssurePrivateDir(dir string) error {
+	return os.MkdirAll(dir, 0770)
 }
 
 func CopyPrivateFile(src string, dest string) error {
