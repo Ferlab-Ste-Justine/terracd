@@ -42,11 +42,12 @@ type BackendMigration struct {
 }
 
 type Config struct {
-	TerraformPath    string	`yaml:"terraform_path"`
+	TerraformPath    string	          `yaml:"terraform_path"`
 	Sources          []ConfigSource
 	Timeouts         ConfigTimeouts
 	BackendMigration BackendMigration `yaml:"backend_migration"`
 	Command          string
+	TerminationHooks TerminationHooks `yaml:"termination_hooks"`
 }
 
 func getConfigFilePath() string {
@@ -75,6 +76,12 @@ func getConfig() (Config, error) {
 
 	if c.Command != "apply" && c.Command != "plan" && c.Command != "wait" && c.Command != "migrate_backend" {
 		return c, errors.New("Valid command values can only be 'plan', 'apply', 'wait' or 'migrate_backend'")
+	}
+
+	for _, hook := range []TerminationHook{c.TerminationHooks.Success, c.TerminationHooks.Failure, c.TerminationHooks.Always} {
+		if (hook.HttpCall.Endpoint != "" && hook.HttpCall.Method == "") || (hook.HttpCall.Endpoint == "" && hook.HttpCall.Method != "") {
+			return c, errors.New("If an http call is defined in a termination hook, both the method and endpoint must be defined")
+		}
 	}
 
 	return c, nil

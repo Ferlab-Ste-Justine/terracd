@@ -47,7 +47,7 @@ func cleanup(workDir string, stateDir string) error {
 	return nil
 }
 
-func Exec() error {
+func Exec(config Config) error {
 	wd, wdErr := os.Getwd()
 	if wdErr != nil {
 		return wdErr
@@ -91,11 +91,6 @@ func Exec() error {
 		}
 	}()
 
-	config, configErr := getConfig()
-	if configErr != nil {
-		return configErr
-	}
-
 	syncErr := syncConfigRepos(reposDir, config)
 	if syncErr != nil {
 		return syncErr
@@ -134,9 +129,27 @@ func Exec() error {
 }
 
 func main() {
-	err := Exec()
+	config, configErr := getConfig()
+	if configErr != nil {
+		fmt.Println(configErr.Error())
+		os.Exit(1)
+	}
+
+	err := Exec(config)
 	if err != nil {
 		fmt.Println(err.Error())
+
+		hookErr := config.TerminationHooks.Run(false)
+		if hookErr != nil {
+			fmt.Println(hookErr.Error())
+		}
+
+		os.Exit(1)
+	}
+
+	hookErr := config.TerminationHooks.Run(true)
+	if hookErr != nil {
+		fmt.Println(hookErr.Error())
 		os.Exit(1)
 	}
 }

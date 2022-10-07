@@ -18,6 +18,7 @@ The file has the following top-level fields:
 - **sources**: Array of terraform file sources to be merged together and applied on
 - **command**: Command to execute. Can be **apply** to run **terraform apply**, **plan** to run **terraform plan**, **migrate_backend** to migrate the terraform state to another backend file or **wait** to simply assemble all the sources together and wait a given duration before exiting (useful for importing resources). Defaults to **apply** if omitted.
 - **backend_migration**: Parameters specifying the backend files to rotate when migrating your backend.
+- **termination_hooks**: Logic to call when the terraform command is done
 
 The **timeouts** entry has the following fields (each taking the duration string format, see: https://pkg.go.dev/time#ParseDuration):
   - **terraform_init**: Execution timeout for the **terraform init** operation.
@@ -45,6 +46,23 @@ The **backend_migration** parameter takes the following fields:
   - **next_backend**: Absolute file name of the next backend to migrate to. It is assumed to be an absolute path not present in the working directory.
 
 
+The **termination_hooks** parameter takes the following fields:
+  - **always**: Always call a hook. If defined, it will always override the success/failure hooks.
+  - **success**: Hook to call when the terraform command succeeds.
+  - **failure**: Hook to call when the terraform command fails.
+
+Each termination hook has the following fields:
+  - **command**: Defines a command to run with its arguments
+  - **http_call**: Defines a simple http call to make against a remote endpoint
+
+The command hook has the following fields:
+  - **command**: Main command to run
+  - **args**: Array of arguments to pass to the command
+
+The http call hook has the following fields:
+  - **method**: Http method to use
+  - **endpoint**: Fully defined endpoint to call
+
 Example of a config file to run terraform apply:
 
 ```
@@ -65,6 +83,16 @@ sources:
       gpg_public_keys_paths:
         - /home/myuser/myarmoredkeyring.asc
   - dir: "/home/myuser/terracd-test/dir2"
+termination_hooks:
+  success:
+    http_call:
+      method: POST
+      endpoint: http://127.0.0.1/terraform_success
+  failure:
+    command:
+      command: "./email_support.sh"
+      args:
+        - "--important"
 ```
 
 Example of a config file to run a backend migration:
