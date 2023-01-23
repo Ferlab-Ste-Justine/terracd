@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"path"
@@ -85,37 +86,29 @@ func MergeDirs(destDir string, sourceDirs []string) error {
 	return nil
 }
 
-func FindFiles(dir string, pattern string) ([]string, error) {
+func FindFiles(src string, pattern string) ([]string, error) {
 	matches := []string{}
 
-	elems, readDirErr := ioutil.ReadDir(dir)
-	if readDirErr != nil {
-		return matches, readDirErr
-	}
-
-	for _, elem := range elems {
-		elemPath := path.Join(dir, elem.Name())
-		elemInfo, err := os.Stat(elemPath)
-		if err != nil {
-			return matches, err
+	err := filepath.Walk(src, func(fPath string, fInfo fs.FileInfo, fErr error) error {
+		if fErr != nil {
+			return fErr
 		}
 
-		if elemInfo.IsDir() {
-			subMatches, err := FindFiles(elemPath, pattern)
-			if err != nil {
-				return matches, err
-			}
-			matches = append(matches, subMatches...)
-		} else {
-			match, err := filepath.Match(path.Join(dir, pattern), elemPath)
-			if err != nil {
-				return matches, err
-			}
-			if match {
-				matches = append(matches, elemPath)
-			}
+		if fInfo.IsDir() {
+			return nil
 		}
-	}
 
-	return matches, nil
+		match, mErr := filepath.Match(path.Join(filepath.Dir(fPath), pattern), fPath)
+		if mErr != nil {
+			return mErr
+		}
+
+		if match {
+			matches = append(matches, fPath)
+		}
+
+		return nil
+	})
+
+	return matches, err
 }

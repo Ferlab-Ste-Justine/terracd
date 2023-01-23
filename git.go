@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 
+	"ferlab/terracd/fs"
 	"ferlab/terracd/git"
 )
 
@@ -49,11 +50,18 @@ func syncConfigRepo(dir string, source ConfigSource, c Config) error {
 
 	armoredKeyrings := []string{}
 	for _, armoredKeyRingPath := range source.Repo.GpgPublicKeysPaths {
-		armoredKeyring, err := os.ReadFile(armoredKeyRingPath)
+		armoredKeyRingFiles, err := fs.FindFiles(armoredKeyRingPath, "*")
 		if err != nil {
-			return errors.New(fmt.Sprintf("Error reading armored keyring \"%s\": %s", armoredKeyRingPath, err.Error()))
+			return errors.New(fmt.Sprintf("Error finding armored keyring files at \"%s\": %s", armoredKeyRingPath, err.Error()))
 		}
-		armoredKeyrings = append(armoredKeyrings, string(armoredKeyring))
+
+		for _, armoredKeyRingFile := range armoredKeyRingFiles {
+			armoredKeyring, err := os.ReadFile(armoredKeyRingFile)
+			if err != nil {
+				return errors.New(fmt.Sprintf("Error reading armored keyring \"%s\": %s", armoredKeyRingFile, err.Error()))
+			}
+			armoredKeyrings = append(armoredKeyrings, string(armoredKeyring))
+		}
 	}
 
 	repo, badRepoDir, syncErr := git.SyncGitRepo(repoDir, source.Repo.Url, source.Repo.Ref, source.Repo.Auth.SshKeyPath, source.Repo.Auth.KnownHostsPath)

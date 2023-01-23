@@ -81,7 +81,8 @@ sources:
         ssh_key_path: "/home/myuser/terracd/id_rsa"
         known_hosts_path: "/home/myuser/terracd/known_hosts"
       gpg_public_keys_paths:
-        - /home/myuser/myarmoredkeyring.asc
+        - /home/myuser/dirhavingkeyrings
+        - /home/myuser/armoredkeyringfile.asc
   - dir: "/home/myuser/terracd-test/dir2"
 termination_hooks:
   success:
@@ -116,7 +117,8 @@ sources:
         ssh_key_path: "/home/myuser/terracd/id_rsa"
         known_hosts_path: "/home/myuser/terracd/known_hosts"
       gpg_public_keys_paths:
-        - /home/myuser/myarmoredkeyring.asc
+        - /home/myuser/dirhavingkeyrings
+        - /home/myuser/armoredkeyringfile.asc
   - dir: "/home/myuser/currentbackenddir"
 ```
 
