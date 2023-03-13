@@ -8,7 +8,8 @@ import (
 	"path"
 
 	"ferlab/terracd/fs"
-	"ferlab/terracd/git"
+	
+	git "github.com/Ferlab-Ste-Justine/git-sdk"
 )
 
 func getRepoDir(url string, ref string) string {
