@@ -3,15 +3,15 @@ package main
 import (
 	"errors"
 	"fmt"
+	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"time"
-	yaml "gopkg.in/yaml.v2"
 )
 
 type ConfigSourceRepoAuth struct {
-	SshKeyPath     string	`yaml:"ssh_key_path"`
-	KnownHostsPath string	`yaml:"known_hosts_path"`
+	SshKeyPath     string `yaml:"ssh_key_path"`
+	KnownHostsPath string `yaml:"known_hosts_path"`
 }
 
 type ConfigSourceRepo struct {
@@ -19,7 +19,7 @@ type ConfigSourceRepo struct {
 	Ref                string
 	Path               string
 	Auth               ConfigSourceRepoAuth
-	GpgPublicKeysPaths []string	`yaml:"gpg_public_keys_paths"`
+	GpgPublicKeysPaths []string `yaml:"gpg_public_keys_paths"`
 }
 
 type ConfigSource struct {
@@ -42,7 +42,7 @@ type BackendMigration struct {
 }
 
 type Config struct {
-	TerraformPath    string	          `yaml:"terraform_path"`
+	TerraformPath    string `yaml:"terraform_path"`
 	Sources          []ConfigSource
 	Timeouts         ConfigTimeouts
 	BackendMigration BackendMigration `yaml:"backend_migration"`
@@ -53,7 +53,7 @@ type Config struct {
 func getConfigFilePath() string {
 	path := os.Getenv("TERRACD_CONFIG_FILE")
 	if path == "" {
-	  return "config.yml"
+		return "config.yml"
 	}
 	return path
 }

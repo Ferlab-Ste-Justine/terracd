@@ -101,29 +101,29 @@ func Exec(config Config) error {
 		return mergeErr
 	}
 
-    switch config.Command {
-    case "wait":
+	switch config.Command {
+	case "wait":
 		waitTime := config.Timeouts.Wait
 		if int64(waitTime) == int64(0) {
 			waitTime, _ = time.ParseDuration("1h")
 		}
 		time.Sleep(waitTime)
-    case "plan":
+	case "plan":
 		planErr := terraformPlan(workDir, config)
 		if planErr != nil {
 			return planErr
 		}
-    case "apply":
+	case "apply":
 		applyErr := terraformApply(workDir, config)
 		if applyErr != nil {
 			return applyErr
 		}
-    case "migrate_backend":
+	case "migrate_backend":
 		migrateErr := terraformMigrateBackend(workDir, config)
 		if migrateErr != nil {
 			return migrateErr
 		}
-    }
+	}
 
 	return nil
 }

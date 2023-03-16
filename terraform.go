@@ -4,8 +4,8 @@ import (
 	"os"
 	"path"
 
-	"ferlab/terracd/terraform"
 	"ferlab/terracd/fs"
+	"ferlab/terracd/terraform"
 )
 
 func terraformMigrateBackend(dir string, conf Config) error {

@@ -8,7 +8,7 @@ import (
 	"path"
 
 	"ferlab/terracd/fs"
-	
+
 	git "github.com/Ferlab-Ste-Justine/git-sdk"
 )
 
@@ -36,7 +36,7 @@ func getSourcePaths(repoDir string, c Config) []string {
 
 func syncConfigRepo(dir string, source ConfigSource, c Config) error {
 	repoDir := path.Join(dir, getRepoDir(source.Repo.Url, source.Repo.Ref))
-			
+
 	_, err := os.Stat(repoDir)
 	if err != nil {
 		if !os.IsNotExist(err) {
@@ -72,7 +72,7 @@ func syncConfigRepo(dir string, source ConfigSource, c Config) error {
 		}
 
 		fmt.Printf("Warning: Will delete repo dir to circumvent error: %s\n", syncErr.Error())
-		
+
 		removalErr := os.RemoveAll(repoDir)
 		if removalErr != nil {
 			return removalErr
