@@ -94,6 +94,21 @@ func FindFiles(src string, pattern string) ([]string, error) {
 			return fErr
 		}
 
+		fMode := fInfo.Mode()
+		if fMode & fs.ModeSymlink != 0 {
+			link, linkErr := os.Readlink(fPath)
+			if linkErr != nil {
+				return linkErr
+			}
+			stat, statErr := os.Stat(link)
+			if statErr != nil {
+				return statErr
+			}
+			if stat.IsDir() {
+				return nil
+			}
+		}
+
 		if fInfo.IsDir() {
 			return nil
 		}
