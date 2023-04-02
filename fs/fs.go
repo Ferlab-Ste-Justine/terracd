@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 )
 
 func PathExists(path string) (bool, error) {
@@ -100,10 +101,20 @@ func FindFiles(src string, pattern string) ([]string, error) {
 			if linkErr != nil {
 				return linkErr
 			}
+
+			if !path.IsAbs(link) {
+				link = path.Join(path.Dir(fPath), link)
+			}
+
 			stat, statErr := os.Stat(link)
 			if statErr != nil {
+				if strings.Contains(statErr.Error(),  "too many levels of symbolic links") {
+					return nil
+				}
+
 				return statErr
 			}
+
 			if stat.IsDir() {
 				return nil
 			}
