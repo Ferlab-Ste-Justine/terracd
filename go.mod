@@ -3,7 +3,7 @@ module ferlab/terracd
 go 1.18
 
 require (
-	github.com/Ferlab-Ste-Justine/git-sdk v0.3.0
+	github.com/Ferlab-Ste-Justine/git-sdk v0.4.0
 	github.com/hashicorp/terraform-exec v0.17.2
 	github.com/hashicorp/terraform-json v0.14.0
 	gopkg.in/yaml.v2 v2.4.0

@@ -65,7 +65,12 @@ func syncConfigRepo(dir string, source ConfigSource, c Config) error {
 		}
 	}
 
-	repo, badRepoDir, syncErr := git.SyncGitRepo(repoDir, source.Repo.Url, source.Repo.Ref, source.Repo.Auth.SshKeyPath, source.Repo.Auth.KnownHostsPath)
+	sshCreds, sshCredsErr := git.GetSshCredentials(source.Repo.Auth.SshKeyPath, source.Repo.Auth.KnownHostsPath)
+	if sshCredsErr != nil {
+		return sshCredsErr
+	}
+
+	repo, badRepoDir, syncErr := git.SyncGitRepo(repoDir, source.Repo.Url, source.Repo.Ref, sshCreds)
 	if syncErr != nil {
 		if !badRepoDir {
 			return errors.New(fmt.Sprintf("Error updating branch \"%s\" of repo \"%s\": %s", source.Repo.Ref, source.Repo.Url, syncErr.Error()))
