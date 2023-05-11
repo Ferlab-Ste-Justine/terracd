@@ -14,6 +14,7 @@ By default, terracd expects a file named **config.yml** to be present in its run
 
 The file has the following top-level fields:
 - **terraform_path**: Path to the terraform binary
+- **working_directory**: Directory where terracd will assemble its workspace from the various sources. Defaults to the working directory of the process if omitted.
 - **timeouts**: Execution timeouts for the various stages of the terraform lifecycle
 - **sources**: Array of terraform file sources to be merged together and applied on
 - **command**: Command to execute. Can be **apply** to run **terraform apply**, **plan** to run **terraform plan**, **migrate_backend** to migrate the terraform state to another backend file or **wait** to simply assemble all the sources together and wait a given duration before exiting (useful for importing resources). Defaults to **apply** if omitted.

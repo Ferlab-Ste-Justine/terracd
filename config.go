@@ -6,6 +6,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -42,12 +43,13 @@ type BackendMigration struct {
 }
 
 type Config struct {
-	TerraformPath    string `yaml:"terraform_path"`
+	TerraformPath    string           `yaml:"terraform_path"`
 	Sources          []ConfigSource
 	Timeouts         ConfigTimeouts
 	BackendMigration BackendMigration `yaml:"backend_migration"`
 	Command          string
 	TerminationHooks TerminationHooks `yaml:"termination_hooks"`
+	WorkingDirectory string           `yaml:"working_directory"`
 }
 
 func getConfigFilePath() string {
@@ -82,6 +84,20 @@ func getConfig() (Config, error) {
 		if (hook.HttpCall.Endpoint != "" && hook.HttpCall.Method == "") || (hook.HttpCall.Endpoint == "" && hook.HttpCall.Method != "") {
 			return c, errors.New("If an http call is defined in a termination hook, both the method and endpoint must be defined")
 		}
+	}
+
+	if c.WorkingDirectory == "" {
+		wd, wdErr := os.Getwd()
+		if wdErr != nil {
+			return c, wdErr
+		}
+
+		c.WorkingDirectory = wd
+	}
+
+	c.WorkingDirectory, err = filepath.Abs(c.WorkingDirectory)
+	if err != nil {
+		return c, err
 	}
 
 	return c, nil

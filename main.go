@@ -48,16 +48,26 @@ func cleanup(workDir string, stateDir string) error {
 }
 
 func Exec(config Config) error {
-	wd, wdErr := os.Getwd()
-	if wdErr != nil {
-		return wdErr
+	workDirExists, workDirExistsErr := fs.PathExists(config.WorkingDirectory)
+	if workDirExistsErr != nil {
+		return workDirExistsErr
+	}
+	if !workDirExists {
+		assureErr := fs.AssurePrivateDir(config.WorkingDirectory)
+		if assureErr != nil {
+			return assureErr
+		}
+	}
+	chdirErr := os.Chdir(config.WorkingDirectory)
+	if chdirErr != nil {
+		return chdirErr
 	}
 
-	reposDir := path.Join(wd, "repos")
-	stateDir := path.Join(wd, "state")
-	workDir := path.Join(wd, "work")
+	reposDir := path.Join(config.WorkingDirectory, "repos")
+	stateDir := path.Join(config.WorkingDirectory, "state")
+	workDir := path.Join(config.WorkingDirectory, "work")
 
-	workDirExists, workDirExistsErr := fs.PathExists(workDir)
+	workDirExists, workDirExistsErr = fs.PathExists(workDir)
 	if workDirExistsErr != nil {
 		return workDirExistsErr
 	}
