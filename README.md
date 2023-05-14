@@ -2,7 +2,7 @@
 
 This is a continuous delivery tool for terraform that supports a gitops methodology.
 
-terracd merge several sources of terraform files together (git repo as well as filesystem), before running an operation on the final result, allowing any files containing secrets (ex: provider, backend, etc) to be separated from the version-controlled files.
+terracd merge several sources of terraform files together (git repo as well as filesystem and generated http backend files), before running an operation on the final result, allowing any files containing secrets (ex: provider, backend, etc) to be separated from the version-controlled files.
 
 terracd runs a single iteration and then exits, relying on an external scheduler like systemd, kubernetes or cron to schedule recurrence.
 
@@ -29,7 +29,7 @@ The **timeouts** entry has the following fields (each taking the duration string
 
 Note that the default behavior is not to apply any timeouts for fields that are omitted.
 
-Each **sources** entry can take one of the following two forms:
+Each **sources** entry can take one of the following 3 forms:
 ```
 - dir: "<local directory with terraform scripts>"
 - repo:
@@ -40,7 +40,23 @@ Each **sources** entry can take one of the following two forms:
       ssh_key_path: "<ssh key that has read access to the repo>"
       known_hosts_path: "<known host file containing the expect fingerprint of git server>"
     gpg_public_keys_paths: <Optional list of armored keyrings to validate signature of latest commit>
+- backend_http:
+    filename: "<File name to give the generated backend file>"
+    address:
+      base: "<Base state url that terraform will use to update and retrieve the state>"
+      query_string: "<list of key/string array pairs representing the query string parameters. It will be url encoded by terracd>"
+    update_method: "<Http method to use when updating the state via the state url>"
+    lock_address:
+      base: "<Base state url that terraform will use to obtain a lock on the terraform state>"
+      query_string: "<list of key/string array pairs representing the query string parameters. It will be url encoded by terracd>"
+    lock_method: "<Http method to use when acquiring a lock on the state using the lock url>"
+    unlock_address:
+      base: "<Base state url that terraform will use to release a lock on the terraform state>"
+      query_string: "<list of key/string array pairs representing the query string parameters. It will be url encoded by terracd>"
+    unlock_method: "<Http method to use when releasing a lock on the state using the unlock url>"
 ```
+
+Note that secret parameters (username/password or client certificate) are absent from the **backend_http** source. They should be passed via environment variables when running terracd.
 
 The **backend_migration** parameter takes the following fields:
   - **current_backend**: File name of the current backend to migrate from. It is assumed to be relative filename that will be part of the files assembled in the working directory.
