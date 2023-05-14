@@ -47,6 +47,24 @@ func cleanup(workDir string, stateDir string) error {
 	return nil
 }
 
+func getSourcePaths(repoDir string, c Config) []string {
+	paths := []string{}
+	for _, source := range c.Sources {
+		if source.Repo.Url != "" {
+			dir := getRepoDir(source.Repo.Url, source.Repo.Ref)
+			dir = path.Join(repoDir, dir)
+			if source.Repo.Path != "" {
+				dir = path.Join(dir, source.Repo.Path)
+			}
+			paths = append(paths, dir)
+		} else if source.Dir != "" {
+			paths = append(paths, source.Dir)
+		}
+	}
+
+	return paths
+}
+
 func Exec(config Config) error {
 	workDirExists, workDirExistsErr := fs.PathExists(config.WorkingDirectory)
 	if workDirExistsErr != nil {
@@ -64,6 +82,7 @@ func Exec(config Config) error {
 	}
 
 	reposDir := path.Join(config.WorkingDirectory, "repos")
+	backendDir := path.Join(config.WorkingDirectory, "backend")
 	stateDir := path.Join(config.WorkingDirectory, "state")
 	workDir := path.Join(config.WorkingDirectory, "work")
 
@@ -80,6 +99,11 @@ func Exec(config Config) error {
 	}
 
 	assureErr := fs.AssurePrivateDir(reposDir)
+	if assureErr != nil {
+		return assureErr
+	}
+
+	assureErr = fs.AssurePrivateDir(backendDir)
 	if assureErr != nil {
 		return assureErr
 	}
@@ -106,7 +130,12 @@ func Exec(config Config) error {
 		return syncErr
 	}
 
-	mergeErr := fs.MergeDirs(workDir, append(getSourcePaths(reposDir, config), stateDir))
+	backendGenErr := GenerateBackendFiles(backendDir, config)
+	if backendGenErr != nil {
+		return backendGenErr
+	}
+
+	mergeErr := fs.MergeDirs(workDir, append(getSourcePaths(reposDir, config), stateDir, backendDir))
 	if mergeErr != nil {
 		return mergeErr
 	}

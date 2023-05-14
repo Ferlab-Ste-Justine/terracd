@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+	"net/url"
 )
 
 type ConfigSourceRepoAuth struct {
@@ -23,9 +24,25 @@ type ConfigSourceRepo struct {
 	GpgPublicKeysPaths []string `yaml:"gpg_public_keys_paths"`
 }
 
+type Address struct {
+	Base        string
+	QueryString url.Values `yaml:"query_string"`
+}
+
+type BackendHttp struct {
+	Filename      string
+	Address       Address
+	UpdateMethod  string  `yaml:"update_method"`
+	LockAddress   Address `yaml:"lock_address"`
+	LockMethod    string  `yaml:"lock_method"`
+	UnlockAddress Address `yaml:"unlock_address"`
+	UnlockMethod  string  `yaml:"unlock_method"`
+}
+
 type ConfigSource struct {
-	Dir  string
-	Repo ConfigSourceRepo
+	Dir         string
+	Repo        ConfigSourceRepo
+	BackendHttp BackendHttp     `yaml:"backend_http"`
 }
 
 type ConfigTimeouts struct {
