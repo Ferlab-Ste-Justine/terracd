@@ -16,24 +16,6 @@ func getRepoDir(url string, ref string) string {
 	return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s|%s", url, ref)))
 }
 
-func getSourcePaths(repoDir string, c Config) []string {
-	paths := []string{}
-	for _, source := range c.Sources {
-		if source.Repo.Url != "" {
-			dir := getRepoDir(source.Repo.Url, source.Repo.Ref)
-			dir = path.Join(repoDir, dir)
-			if source.Repo.Path != "" {
-				dir = path.Join(dir, source.Repo.Path)
-			}
-			paths = append(paths, dir)
-		} else {
-			paths = append(paths, source.Dir)
-		}
-	}
-
-	return paths
-}
-
 func syncConfigRepo(dir string, source ConfigSource, c Config) error {
 	repoDir := path.Join(dir, getRepoDir(source.Repo.Url, source.Repo.Ref))
 
