@@ -65,26 +65,26 @@ func getSourcePaths(repoDir string, c Config) []string {
 	return paths
 }
 
-func Exec(config Config) error {
-	workDirExists, workDirExistsErr := fs.PathExists(config.WorkingDirectory)
+func Exec(conf Config) error {
+	workDirExists, workDirExistsErr := fs.PathExists(conf.WorkingDirectory)
 	if workDirExistsErr != nil {
 		return workDirExistsErr
 	}
 	if !workDirExists {
-		assureErr := fs.AssurePrivateDir(config.WorkingDirectory)
+		assureErr := fs.AssurePrivateDir(conf.WorkingDirectory)
 		if assureErr != nil {
 			return assureErr
 		}
 	}
-	chdirErr := os.Chdir(config.WorkingDirectory)
+	chdirErr := os.Chdir(conf.WorkingDirectory)
 	if chdirErr != nil {
 		return chdirErr
 	}
 
-	reposDir := path.Join(config.WorkingDirectory, "repos")
-	backendDir := path.Join(config.WorkingDirectory, "backend")
-	stateDir := path.Join(config.WorkingDirectory, "state")
-	workDir := path.Join(config.WorkingDirectory, "work")
+	reposDir := path.Join(conf.WorkingDirectory, "repos")
+	backendDir := path.Join(conf.WorkingDirectory, "backend")
+	stateDir := path.Join(conf.WorkingDirectory, "state")
+	workDir := path.Join(conf.WorkingDirectory, "work")
 
 	workDirExists, workDirExistsErr = fs.PathExists(workDir)
 	if workDirExistsErr != nil {
@@ -125,40 +125,40 @@ func Exec(config Config) error {
 		}
 	}()
 
-	syncErr := syncConfigRepos(reposDir, config)
+	syncErr := syncConfigRepos(reposDir, conf)
 	if syncErr != nil {
 		return syncErr
 	}
 
-	backendGenErr := GenerateBackendFiles(backendDir, config)
+	backendGenErr := GenerateBackendFiles(backendDir, conf)
 	if backendGenErr != nil {
 		return backendGenErr
 	}
 
-	mergeErr := fs.MergeDirs(workDir, append(getSourcePaths(reposDir, config), stateDir, backendDir))
+	mergeErr := fs.MergeDirs(workDir, append(getSourcePaths(reposDir, conf), stateDir, backendDir))
 	if mergeErr != nil {
 		return mergeErr
 	}
 
-	switch config.Command {
+	switch conf.Command {
 	case "wait":
-		waitTime := config.Timeouts.Wait
+		waitTime := conf.Timeouts.Wait
 		if int64(waitTime) == int64(0) {
 			waitTime, _ = time.ParseDuration("1h")
 		}
 		time.Sleep(waitTime)
 	case "plan":
-		planErr := terraformPlan(workDir, config)
+		planErr := terraformPlan(workDir, conf)
 		if planErr != nil {
 			return planErr
 		}
 	case "apply":
-		applyErr := terraformApply(workDir, config)
+		applyErr := terraformApply(workDir, conf)
 		if applyErr != nil {
 			return applyErr
 		}
 	case "migrate_backend":
-		migrateErr := terraformMigrateBackend(workDir, config)
+		migrateErr := terraformMigrateBackend(workDir, conf)
 		if migrateErr != nil {
 			return migrateErr
 		}
@@ -168,17 +168,17 @@ func Exec(config Config) error {
 }
 
 func main() {
-	config, configErr := getConfig()
+	conf, configErr := GetConfig()
 	if configErr != nil {
 		fmt.Println(configErr.Error())
 		os.Exit(1)
 	}
 
-	err := Exec(config)
+	err := Exec(conf)
 	if err != nil {
 		fmt.Println(err.Error())
 
-		hookErr := config.TerminationHooks.Run(false)
+		hookErr := conf.TerminationHooks.Run(false)
 		if hookErr != nil {
 			fmt.Println(hookErr.Error())
 		}
@@ -186,7 +186,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	hookErr := config.TerminationHooks.Run(true)
+	hookErr := conf.TerminationHooks.Run(true)
 	if hookErr != nil {
 		fmt.Println(hookErr.Error())
 		os.Exit(1)

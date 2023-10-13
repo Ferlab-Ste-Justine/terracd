@@ -9,6 +9,10 @@ import (
 	"path/filepath"
 	"time"
 	"net/url"
+
+	"ferlab/terracd/auth"
+	"ferlab/terracd/reccurrence"
+	"ferlab/terracd/state"
 )
 
 type ConfigSourceRepoAuth struct {
@@ -59,14 +63,28 @@ type BackendMigration struct {
 	NextBackend    string `yaml:"next_backend"`
 }
 
+type ConfigMetricsPushGateway struct {
+	Url  string
+	Auth auth.Auth
+}
+
+type ConfigMetrics struct {
+	JobName     string                   `yaml:"job_name"`
+	PushGateway ConfigMetricsPushGateway `yaml:"push_gateway"`
+}
+
 type Config struct {
-	TerraformPath    string           `yaml:"terraform_path"`
+	TerraformPath    string                 `yaml:"terraform_path"`
 	Sources          []ConfigSource
 	Timeouts         ConfigTimeouts
-	BackendMigration BackendMigration `yaml:"backend_migration"`
+	Reccurrence      reccurrence.Recurrence
+	RandomJitter     time.Duration          `yaml:"random_jitter"`
+	BackendMigration BackendMigration       `yaml:"backend_migration"`
 	Command          string
-	TerminationHooks TerminationHooks `yaml:"termination_hooks"`
-	WorkingDirectory string           `yaml:"working_directory"`
+	TerminationHooks TerminationHooks       `yaml:"termination_hooks"`
+	WorkingDirectory string                 `yaml:"working_directory"`
+	StateStore       state.StateStoreConfig `yaml:"state_store"`
+	Metrics          ConfigMetrics
 }
 
 func getConfigFilePath() string {
@@ -77,7 +95,7 @@ func getConfigFilePath() string {
 	return path
 }
 
-func getConfig() (Config, error) {
+func GetConfig() (Config, error) {
 	var c Config
 
 	b, err := ioutil.ReadFile(getConfigFilePath())
@@ -115,6 +133,10 @@ func getConfig() (Config, error) {
 	c.WorkingDirectory, err = filepath.Abs(c.WorkingDirectory)
 	if err != nil {
 		return c, err
+	}
+
+	if c.Reccurrence.IsDefined() && (!c.StateStore.IsDefined()) {
+		return c, errors.New("If a reccurrence is defined, a state store must also be defined in order to enforce it")
 	}
 
 	return c, nil

@@ -43,8 +43,8 @@ func GenerateBackendFile(filePath string, backend BackendHttp) error {
 	return execErr
 }
 
-func GenerateBackendFiles(backendDir string, config Config) error {
-	for _, source := range config.Sources {
+func GenerateBackendFiles(backendDir string, conf Config) error {
+	for _, source := range conf.Sources {
 		if source.BackendHttp.Filename != "" {
 			genErr := GenerateBackendFile(path.Join(backendDir, source.BackendHttp.Filename), source.BackendHttp)
 			if genErr != nil {
