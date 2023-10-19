@@ -31,6 +31,11 @@ type EtcdStateStore struct {
 	client *client.EtcdClient
 }
 func (store *EtcdStateStore) Initialize() error {
+	passErr := store.Config.Auth.ResolvePassword()
+	if passErr != nil {
+		return passErr
+	}
+
 	cli, cliErr := client.Connect(context.Background(), client.EtcdClientOptions{
 		ClientCertPath:    store.Config.Auth.ClientCert,
 		ClientKeyPath:     store.Config.Auth.ClientKey,

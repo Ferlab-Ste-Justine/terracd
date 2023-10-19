@@ -1,12 +1,28 @@
-package main
+package source
 
 import (
 	_ "embed"
 	"fmt"
+	"net/url"
 	"os"
 	"path"
 	"text/template"
 )
+
+type Address struct {
+	Base        string
+	QueryString url.Values `yaml:"query_string"`
+}
+
+type BackendHttp struct {
+	Filename      string
+	Address       Address
+	UpdateMethod  string  `yaml:"update_method"`
+	LockAddress   Address `yaml:"lock_address"`
+	LockMethod    string  `yaml:"lock_method"`
+	UnlockAddress Address `yaml:"unlock_address"`
+	UnlockMethod  string  `yaml:"unlock_method"`
+}
 
 var (
 	//go:embed backend_http.tf
@@ -43,14 +59,15 @@ func GenerateBackendFile(filePath string, backend BackendHttp) error {
 	return execErr
 }
 
-func GenerateBackendFiles(backendDir string, conf Config) error {
-	for _, source := range conf.Sources {
-		if source.BackendHttp.Filename != "" {
+func (srcs *Sources) GenerateBackendFiles(backendDir string) error {
+	for _, source := range *srcs {
+		if source.GetType() == TypeBackendHttp {
 			genErr := GenerateBackendFile(path.Join(backendDir, source.BackendHttp.Filename), source.BackendHttp)
 			if genErr != nil {
 				return genErr
 			}
 		}
 	}
+
 	return nil
 }

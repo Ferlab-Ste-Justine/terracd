@@ -8,6 +8,7 @@ import (
 	"path"
 
 	"ferlab/terracd/fs"
+	"ferlab/terracd/source"
 
 	git "github.com/Ferlab-Ste-Justine/git-sdk"
 )
@@ -16,7 +17,7 @@ func getRepoDir(url string, ref string) string {
 	return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s|%s", url, ref)))
 }
 
-func syncConfigRepo(dir string, source ConfigSource, c Config) error {
+func syncConfigRepo(dir string, source source.Source, c Config) error {
 	repoDir := path.Join(dir, getRepoDir(source.Repo.Url, source.Repo.Ref))
 
 	_, err := os.Stat(repoDir)

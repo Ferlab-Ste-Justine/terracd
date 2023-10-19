@@ -130,7 +130,7 @@ func Exec(conf Config) error {
 		return syncErr
 	}
 
-	backendGenErr := GenerateBackendFiles(backendDir, conf)
+	backendGenErr := conf.Sources.GenerateBackendFiles(backendDir)
 	if backendGenErr != nil {
 		return backendGenErr
 	}
@@ -178,7 +178,7 @@ func main() {
 	if err != nil {
 		fmt.Println(err.Error())
 
-		hookErr := conf.TerminationHooks.Run(false)
+		hookErr := conf.TerminationHooks.Run(OpFailure)
 		if hookErr != nil {
 			fmt.Println(hookErr.Error())
 		}
@@ -186,7 +186,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	hookErr := conf.TerminationHooks.Run(true)
+	hookErr := conf.TerminationHooks.Run(OpSuccess)
 	if hookErr != nil {
 		fmt.Println(hookErr.Error())
 		os.Exit(1)

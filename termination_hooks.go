@@ -7,19 +7,30 @@ import (
 	"strings"
 )
 
+type OpResult int64
+
+const (
+	OpSuccess OpResult = iota
+	OpFailure
+	OpSkip
+)
+
 type TerminationHooks struct {
 	Success TerminationHook
 	Failure TerminationHook
+	Skip    TerminationHook
 	Always  TerminationHook
 }
 
-func (hooks *TerminationHooks) Run(success bool) error {
+func (hooks *TerminationHooks) Run(result OpResult) error {
 	if hooks.Always.IsDefined() {
 		return hooks.Always.Run()
-	} else if success && hooks.Success.IsDefined() {
+	} else if result == OpSuccess && hooks.Success.IsDefined() {
 		return hooks.Success.Run()
-	} else if hooks.Failure.IsDefined() {
+	} else if result == OpFailure && hooks.Failure.IsDefined() {
 		return hooks.Failure.Run()
+	} else if result == OpSkip && hooks.Skip.IsDefined() {
+		return hooks.Skip.Run()
 	}
 
 	return nil
