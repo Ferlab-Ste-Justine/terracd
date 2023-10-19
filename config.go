@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"ferlab/terracd/auth"
-	"ferlab/terracd/reccurrence"
+	"ferlab/terracd/recurrence"
 	"ferlab/terracd/source"
 	"ferlab/terracd/state"
 )
@@ -43,7 +43,7 @@ type Config struct {
 	TerraformPath    string                 `yaml:"terraform_path"`
 	Sources          source.Sources
 	Timeouts         ConfigTimeouts
-	Reccurrence      reccurrence.Recurrence
+	Recurrence       recurrence.Recurrence
 	RandomJitter     time.Duration          `yaml:"random_jitter"`
 	BackendMigration BackendMigration       `yaml:"backend_migration"`
 	Command          string
@@ -101,7 +101,7 @@ func GetConfig() (Config, error) {
 		return c, err
 	}
 
-	if c.Reccurrence.IsDefined() && (!c.StateStore.IsDefined()) {
+	if c.Recurrence.IsDefined() && (!c.StateStore.IsDefined()) {
 		return c, errors.New("If a reccurrence is defined, a state store must also be defined in order to enforce it")
 	}
 

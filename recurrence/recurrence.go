@@ -1,4 +1,4 @@
-package reccurrence
+package recurrence
 
 import (
 	"time"
@@ -44,6 +44,16 @@ func GitReposChanged(first []source.CommitHash, second []source.CommitHash) bool
 	}
 
 	return false
+}
+
+func GenerateCommandOccurrence(cmd string, hashes []source.CommitHash) *CommandOccurrence {
+	return &CommandOccurrence{
+		Command: cmd,
+		Occurrence: Occurrence{
+			CommitHashes: hashes,
+			Timestamp: time.Now(),
+		},
+	}
 }
 
 func (last *CommandOccurrence) ShouldOccur(rec *Recurrence, next *CommandOccurrence) bool {
