@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"ferlab/terracd/fs"
-	"ferlab/terracd/source"
 )
 
 func cleanup(workDir string, stateDir string) error {
@@ -46,25 +45,6 @@ func cleanup(workDir string, stateDir string) error {
 	}
 
 	return nil
-}
-
-func getSourcePaths(repoDir string, c Config) []string {
-	paths := []string{}
-	for _, src:= range c.Sources {
-		srcType := src.GetType()
-		if srcType == source.TypeGitRepo {
-			dir := src.GitRepo.GetDir()
-			dir = path.Join(repoDir, dir)
-			if src.GitRepo.Path != "" {
-				dir = path.Join(dir, src.GitRepo.Path)
-			}
-			paths = append(paths, dir)
-		} else if srcType == source.TypeDirectory {
-			paths = append(paths, src.Dir)
-		}
-	}
-
-	return paths
 }
 
 func Exec(conf Config) error {
@@ -137,7 +117,7 @@ func Exec(conf Config) error {
 		return backendGenErr
 	}
 
-	mergeErr := fs.MergeDirs(workDir, append(getSourcePaths(reposDir, conf), stateDir, backendDir))
+	mergeErr := fs.MergeDirs(workDir, append(conf.Sources.GetFsPaths(reposDir), stateDir, backendDir))
 	if mergeErr != nil {
 		return mergeErr
 	}

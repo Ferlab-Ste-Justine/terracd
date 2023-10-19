@@ -1,5 +1,9 @@
 package source
 
+import (
+	"path"
+)
+
 type SourceType int64
 
 const (
@@ -30,3 +34,22 @@ func (src *Source) GetType() SourceType {
 }
 
 type Sources []Source
+
+func (srcs *Sources) GetFsPaths(reposDir string) []string {
+	paths := []string{}
+	for _, src:= range *srcs {
+		srcType := src.GetType()
+		if srcType == TypeGitRepo {
+			dir := src.GitRepo.GetDir()
+			dir = path.Join(reposDir, dir)
+			if src.GitRepo.Path != "" {
+				dir = path.Join(dir, src.GitRepo.Path)
+			}
+			paths = append(paths, dir)
+		} else if srcType == TypeDirectory {
+			paths = append(paths, src.Dir)
+		}
+	}
+
+	return paths
+}
