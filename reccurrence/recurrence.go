@@ -13,14 +13,43 @@ func (rec *Recurrence) IsDefined() bool {
 	return rec.MinInterval > 0 
 }
 
+type CommitHash struct {
+	Url  string
+	Ref  string
+	Path string
+	Hash string 
+}
+
 type Occurrence struct {
-	CommitHash string        `yaml:"commit_hash"`
-	Timestamp  time.Time
+	CommitHashes []CommitHash `yaml:"commit_hash"`
+	Timestamp    time.Time
 }
 
 type CommandOccurrence struct {
 	Command    string
 	Occurrence Occurrence
+}
+
+func GitReposChanged(first []CommitHash, second []CommitHash) bool {
+	if len(first) != len(second) {
+		return true
+	}
+
+	for _, hash := range first {
+		matched := false
+		for _, hash2 := range second {
+			if hash == hash2 {
+				matched = true
+				break
+			}
+		}
+
+		if !matched {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (last *CommandOccurrence) ShouldOccur(rec *Recurrence, next *CommandOccurrence) bool {
@@ -29,9 +58,9 @@ func (last *CommandOccurrence) ShouldOccur(rec *Recurrence, next *CommandOccurre
 	}
 
 	if last.Command == "migrate_backend" {
-		return last.Occurrence.CommitHash != next.Occurrence.CommitHash
+		return GitReposChanged(last.Occurrence.CommitHashes, next.Occurrence.CommitHashes)
 	} else if last.Command == "plan" || last.Command == "apply" {
-		if rec.GitTriggers && last.Occurrence.CommitHash != next.Occurrence.CommitHash {
+		if rec.GitTriggers && GitReposChanged(last.Occurrence.CommitHashes, next.Occurrence.CommitHashes) {
 			return true
 		}
 
