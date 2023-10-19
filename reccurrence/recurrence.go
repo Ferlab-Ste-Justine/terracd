@@ -2,6 +2,7 @@ package reccurrence
 
 import (
 	"time"
+	"ferlab/terracd/source"
 )
 
 type Recurrence struct {
@@ -13,15 +14,8 @@ func (rec *Recurrence) IsDefined() bool {
 	return rec.MinInterval > 0 
 }
 
-type CommitHash struct {
-	Url  string
-	Ref  string
-	Path string
-	Hash string 
-}
-
 type Occurrence struct {
-	CommitHashes []CommitHash `yaml:"commit_hash"`
+	CommitHashes []source.CommitHash `yaml:"commit_hashes"`
 	Timestamp    time.Time
 }
 
@@ -30,7 +24,7 @@ type CommandOccurrence struct {
 	Occurrence Occurrence
 }
 
-func GitReposChanged(first []CommitHash, second []CommitHash) bool {
+func GitReposChanged(first []source.CommitHash, second []source.CommitHash) bool {
 	if len(first) != len(second) {
 		return true
 	}

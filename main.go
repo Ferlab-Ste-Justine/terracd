@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"ferlab/terracd/fs"
+	"ferlab/terracd/state"
 )
 
 func cleanup(workDir string, stateDir string) error {
@@ -47,7 +48,8 @@ func cleanup(workDir string, stateDir string) error {
 	return nil
 }
 
-func Exec(conf Config) error {
+//To do: return modified state
+func Exec(conf Config, st state.State) error {
 	workDirExists, workDirExistsErr := fs.PathExists(conf.WorkingDirectory)
 	if workDirExistsErr != nil {
 		return workDirExistsErr
@@ -107,7 +109,7 @@ func Exec(conf Config) error {
 		}
 	}()
 
-	syncErr := conf.Sources.SyncGitRepos(reposDir)
+	_, syncErr := conf.Sources.SyncGitRepos(reposDir)
 	if syncErr != nil {
 		return syncErr
 	}
@@ -156,7 +158,34 @@ func main() {
 		os.Exit(1)
 	}
 
-	err := Exec(conf)
+	var st state.State
+	var stateErr error
+	var store state.StateStore
+	var storeErr error
+	if conf.StateStore.IsDefined() {
+		store, storeErr = conf.StateStore.GetStore()
+		if storeErr != nil {
+			fmt.Println(storeErr.Error())
+			os.Exit(1)
+		}
+		
+		initErr := store.Initialize()
+		if initErr != nil {
+			fmt.Println(initErr.Error())
+			os.Exit(1)
+		}
+
+		defer store.Cleanup()
+
+		st, stateErr = store.Read()
+		if stateErr != nil {
+			fmt.Println(stateErr.Error())
+			os.Exit(1)
+		}
+
+	}
+
+	err := Exec(conf, st)
 	if err != nil {
 		fmt.Println(err.Error())
 
@@ -167,6 +196,17 @@ func main() {
 
 		os.Exit(1)
 	}
+
+	//Todo: Persist state if defined
+	/*
+	if conf.StateStore.IsDefined() {
+		writeErr := store.Write(...)
+		if writeErr != nil {
+			fmt.Println(writeErr.Error())
+			os.Exit(1)
+		}
+	}
+	*/
 
 	hookErr := conf.TerminationHooks.Run(OpSuccess)
 	if hookErr != nil {
