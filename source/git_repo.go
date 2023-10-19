@@ -1,4 +1,4 @@
-package main
+package source
 
 import (
 	"encoding/base64"
@@ -7,18 +7,30 @@ import (
 	"os"
 	"path"
 
-	"ferlab/terracd/fs"
-	"ferlab/terracd/source"
-
 	git "github.com/Ferlab-Ste-Justine/git-sdk"
+
+	"ferlab/terracd/fs"
 )
 
-func getRepoDir(url string, ref string) string {
-	return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s|%s", url, ref)))
+type GitRepoAuth struct {
+	SshKeyPath     string `yaml:"ssh_key_path"`
+	KnownHostsPath string `yaml:"known_hosts_path"`
 }
 
-func syncConfigRepo(dir string, source source.Source, c Config) error {
-	repoDir := path.Join(dir, getRepoDir(source.Repo.Url, source.Repo.Ref))
+type GitRepo struct {
+	Url                string
+	Ref                string
+	Path               string
+	Auth               GitRepoAuth
+	GpgPublicKeysPaths []string `yaml:"gpg_public_keys_paths"`
+}
+
+func (repo *GitRepo) GetDir() string {
+	return base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s|%s", repo.Url, repo.Ref)))
+}
+
+func (repo *GitRepo) Sync(dir string) error {
+	repoDir := path.Join(dir, repo.GetDir())
 
 	_, err := os.Stat(repoDir)
 	if err != nil {
@@ -33,7 +45,7 @@ func syncConfigRepo(dir string, source source.Source, c Config) error {
 	}
 
 	armoredKeyrings := []string{}
-	for _, armoredKeyRingPath := range source.Repo.GpgPublicKeysPaths {
+	for _, armoredKeyRingPath := range repo.GpgPublicKeysPaths {
 		armoredKeyRingFiles, err := fs.FindFiles(armoredKeyRingPath, "*")
 		if err != nil {
 			return errors.New(fmt.Sprintf("Error finding armored keyring files at \"%s\": %s", armoredKeyRingPath, err.Error()))
@@ -48,15 +60,15 @@ func syncConfigRepo(dir string, source source.Source, c Config) error {
 		}
 	}
 
-	sshCreds, sshCredsErr := git.GetSshCredentials(source.Repo.Auth.SshKeyPath, source.Repo.Auth.KnownHostsPath)
+	sshCreds, sshCredsErr := git.GetSshCredentials(repo.Auth.SshKeyPath, repo.Auth.KnownHostsPath)
 	if sshCredsErr != nil {
 		return sshCredsErr
 	}
 
-	repo, badRepoDir, syncErr := git.SyncGitRepo(repoDir, source.Repo.Url, source.Repo.Ref, sshCreds)
+	gogitRepo, badRepoDir, syncErr := git.SyncGitRepo(repoDir, repo.Url, repo.Ref, sshCreds)
 	if syncErr != nil {
 		if !badRepoDir {
-			return errors.New(fmt.Sprintf("Error updating branch \"%s\" of repo \"%s\": %s", source.Repo.Ref, source.Repo.Url, syncErr.Error()))
+			return errors.New(fmt.Sprintf("Error updating branch \"%s\" of repo \"%s\": %s", repo.Ref, repo.Url, syncErr.Error()))
 		}
 
 		fmt.Printf("Warning: Will delete repo dir to circumvent error: %s\n", syncErr.Error())
@@ -66,20 +78,20 @@ func syncConfigRepo(dir string, source source.Source, c Config) error {
 			return removalErr
 		}
 
-		return syncConfigRepo(dir, source, c)
+		return repo.Sync(dir)
 	}
 
 	if len(armoredKeyrings) > 0 {
-		return git.VerifyTopCommit(repo, armoredKeyrings)
+		return git.VerifyTopCommit(gogitRepo, armoredKeyrings)
 	}
 
 	return nil
 }
 
-func syncConfigRepos(dir string, c Config) error {
-	for _, source := range c.Sources {
-		if source.Repo.Url != "" {
-			err := syncConfigRepo(dir, source, c)
+func (srcs *Sources) SyncGitRepos(dir string) error {
+	for _, source := range *srcs {
+		if source.GetType() == TypeGitRepo {
+			err := source.GitRepo.Sync(dir)
 			if err != nil {
 				return err
 			}

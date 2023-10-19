@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"ferlab/terracd/fs"
+	"ferlab/terracd/source"
 )
 
 func cleanup(workDir string, stateDir string) error {
@@ -49,16 +50,17 @@ func cleanup(workDir string, stateDir string) error {
 
 func getSourcePaths(repoDir string, c Config) []string {
 	paths := []string{}
-	for _, source := range c.Sources {
-		if source.Repo.Url != "" {
-			dir := getRepoDir(source.Repo.Url, source.Repo.Ref)
+	for _, src:= range c.Sources {
+		srcType := src.GetType()
+		if srcType == source.TypeGitRepo {
+			dir := src.GitRepo.GetDir()
 			dir = path.Join(repoDir, dir)
-			if source.Repo.Path != "" {
-				dir = path.Join(dir, source.Repo.Path)
+			if src.GitRepo.Path != "" {
+				dir = path.Join(dir, src.GitRepo.Path)
 			}
 			paths = append(paths, dir)
-		} else if source.Dir != "" {
-			paths = append(paths, source.Dir)
+		} else if srcType == source.TypeDirectory {
+			paths = append(paths, src.Dir)
 		}
 	}
 
@@ -125,7 +127,7 @@ func Exec(conf Config) error {
 		}
 	}()
 
-	syncErr := syncConfigRepos(reposDir, conf)
+	syncErr := conf.Sources.SyncGitRepos(reposDir)
 	if syncErr != nil {
 		return syncErr
 	}
