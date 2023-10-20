@@ -9,7 +9,7 @@ import (
 	"github.com/Ferlab-Ste-Justine/etcd-sdk/client"
 	yaml "gopkg.in/yaml.v2"
 
-	"ferlab/terracd/auth"
+	"github.com/Ferlab-Ste-Justine/terracd/auth"
 )
 
 type EtcdConfig struct {

@@ -6,9 +6,9 @@ import (
 	"path"
 	"time"
 
-	"ferlab/terracd/fs"
-	"ferlab/terracd/recurrence"
-	"ferlab/terracd/state"
+	"github.com/Ferlab-Ste-Justine/terracd/fs"
+	"github.com/Ferlab-Ste-Justine/terracd/recurrence"
+	"github.com/Ferlab-Ste-Justine/terracd/state"
 )
 
 func cleanup(workDir string, stateDir string) error {

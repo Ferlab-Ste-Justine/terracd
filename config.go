@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"ferlab/terracd/auth"
-	"ferlab/terracd/recurrence"
-	"ferlab/terracd/source"
-	"ferlab/terracd/state"
+	"github.com/Ferlab-Ste-Justine/terracd/auth"
+	"github.com/Ferlab-Ste-Justine/terracd/recurrence"
+	"github.com/Ferlab-Ste-Justine/terracd/source"
+	"github.com/Ferlab-Ste-Justine/terracd/state"
 )
 
 type ConfigTimeouts struct {

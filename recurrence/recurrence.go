@@ -2,7 +2,7 @@ package recurrence
 
 import (
 	"time"
-	"ferlab/terracd/source"
+	"github.com/Ferlab-Ste-Justine/terracd/source"
 )
 
 type Recurrence struct {

@@ -9,7 +9,7 @@ import (
 
 	git "github.com/Ferlab-Ste-Justine/git-sdk"
 
-	"ferlab/terracd/fs"
+	"github.com/Ferlab-Ste-Justine/terracd/fs"
 )
 
 type CommitHash struct {

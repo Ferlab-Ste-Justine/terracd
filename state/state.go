@@ -1,7 +1,7 @@
 package state
 
 import (
-	"ferlab/terracd/recurrence"
+	"github.com/Ferlab-Ste-Justine/terracd/recurrence"
 )
 
 

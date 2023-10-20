@@ -1,4 +1,4 @@
-module ferlab/terracd
+module github.com/Ferlab-Ste-Justine/terracd
 
 go 1.18
 
