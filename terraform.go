@@ -4,11 +4,12 @@ import (
 	"os"
 	"path"
 
+	"github.com/Ferlab-Ste-Justine/terracd/config"
 	"github.com/Ferlab-Ste-Justine/terracd/fs"
 	"github.com/Ferlab-Ste-Justine/terracd/terraform"
 )
 
-func terraformMigrateBackend(dir string, conf Config) error {
+func terraformMigrateBackend(dir string, conf config.Config) error {
 	initErr := terraform.Init(dir, conf.TerraformPath, conf.Timeouts.TerraformInit)
 	if initErr != nil {
 		return initErr
@@ -33,7 +34,7 @@ func terraformMigrateBackend(dir string, conf Config) error {
 	return nil
 }
 
-func terraformPlan(dir string, conf Config) error {
+func terraformPlan(dir string, conf config.Config) error {
 	planName := "terracd-plan"
 	forbiddenOpsFsPattern := "*.terracd-fo.yml"
 
@@ -67,7 +68,7 @@ func terraformPlan(dir string, conf Config) error {
 	return nil
 }
 
-func terraformApply(dir string, conf Config) error {
+func terraformApply(dir string, conf config.Config) error {
 	planName := "terracd-plan"
 	forbiddenOpsFsPattern := "*.terracd-fo.yml"
 

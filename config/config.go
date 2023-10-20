@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"errors"
@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Ferlab-Ste-Justine/terracd/auth"
+	"github.com/Ferlab-Ste-Justine/terracd/hook"
 	"github.com/Ferlab-Ste-Justine/terracd/recurrence"
 	"github.com/Ferlab-Ste-Justine/terracd/source"
 	"github.com/Ferlab-Ste-Justine/terracd/state"
@@ -47,7 +48,7 @@ type Config struct {
 	RandomJitter     time.Duration          `yaml:"random_jitter"`
 	BackendMigration BackendMigration       `yaml:"backend_migration"`
 	Command          string
-	TerminationHooks TerminationHooks       `yaml:"termination_hooks"`
+	TerminationHooks hook.TerminationHooks `yaml:"termination_hooks"`
 	WorkingDirectory string                 `yaml:"working_directory"`
 	StateStore       state.StateStoreConfig `yaml:"state_store"`
 	Metrics          ConfigMetrics
@@ -81,8 +82,8 @@ func GetConfig() (Config, error) {
 		return c, errors.New("Valid command values can only be 'plan', 'apply', 'wait' or 'migrate_backend'")
 	}
 
-	for _, hook := range []TerminationHook{c.TerminationHooks.Success, c.TerminationHooks.Failure, c.TerminationHooks.Always} {
-		if (hook.HttpCall.Endpoint != "" && hook.HttpCall.Method == "") || (hook.HttpCall.Endpoint == "" && hook.HttpCall.Method != "") {
+	for _, thook := range []hook.TerminationHook{c.TerminationHooks.Success, c.TerminationHooks.Failure, c.TerminationHooks.Always} {
+		if (thook.HttpCall.Endpoint != "" && thook.HttpCall.Method == "") || (thook.HttpCall.Endpoint == "" && thook.HttpCall.Method != "") {
 			return c, errors.New("If an http call is defined in a termination hook, both the method and endpoint must be defined")
 		}
 	}

@@ -6,7 +6,9 @@ import (
 	"path"
 	"time"
 
+	"github.com/Ferlab-Ste-Justine/terracd/config"
 	"github.com/Ferlab-Ste-Justine/terracd/fs"
+	"github.com/Ferlab-Ste-Justine/terracd/hook"
 	"github.com/Ferlab-Ste-Justine/terracd/recurrence"
 	"github.com/Ferlab-Ste-Justine/terracd/state"
 )
@@ -50,7 +52,7 @@ func cleanup(workDir string, stateDir string) error {
 }
 
 //To do: return modified state
-func Exec(conf Config, st state.State) (state.State, bool, error) {
+func Exec(conf config.Config, st state.State) (state.State, bool, error) {
 	workDirExists, workDirExistsErr := fs.PathExists(conf.WorkingDirectory)
 	if workDirExistsErr != nil {
 		return st, false, workDirExistsErr
@@ -164,7 +166,7 @@ func Exec(conf Config, st state.State) (state.State, bool, error) {
 }
 
 func main() {
-	conf, configErr := GetConfig()
+	conf, configErr := config.GetConfig()
 	if configErr != nil {
 		fmt.Println(configErr.Error())
 		os.Exit(1)
@@ -201,7 +203,7 @@ func main() {
 	if err != nil {
 		fmt.Println(err.Error())
 
-		hookErr := conf.TerminationHooks.Run(OpFailure)
+		hookErr := conf.TerminationHooks.Run(hook.OpFailure)
 		if hookErr != nil {
 			fmt.Println(hookErr.Error())
 		}
@@ -218,7 +220,7 @@ func main() {
 	}
 
 	if skipped {
-		hookErr := conf.TerminationHooks.Run(OpSkip)
+		hookErr := conf.TerminationHooks.Run(hook.OpSkip)
 		if hookErr != nil {
 			fmt.Println(hookErr.Error())
 			os.Exit(1)
@@ -226,7 +228,7 @@ func main() {
 		return
 	}
 
-	hookErr := conf.TerminationHooks.Run(OpSuccess)
+	hookErr := conf.TerminationHooks.Run(hook.OpSuccess)
 	if hookErr != nil {
 		fmt.Println(hookErr.Error())
 		os.Exit(1)
