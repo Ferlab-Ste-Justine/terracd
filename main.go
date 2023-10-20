@@ -50,21 +50,21 @@ func cleanup(workDir string, stateDir string) error {
 }
 
 //To do: return modified state
-func Exec(conf Config, st state.State) (state.State, error) {
+func Exec(conf Config, st state.State) (state.State, bool, error) {
 	workDirExists, workDirExistsErr := fs.PathExists(conf.WorkingDirectory)
 	if workDirExistsErr != nil {
-		return st, workDirExistsErr
+		return st, false, workDirExistsErr
 	}
 	if !workDirExists {
 		assureErr := fs.AssurePrivateDir(conf.WorkingDirectory)
 		if assureErr != nil {
-			return st, assureErr
+			return st, false, assureErr
 		}
 	}
 
 	chdirErr := os.Chdir(conf.WorkingDirectory)
 	if chdirErr != nil {
-		return st, chdirErr
+		return st, false, chdirErr
 	}
 
 	reposDir := path.Join(conf.WorkingDirectory, "repos")
@@ -74,34 +74,34 @@ func Exec(conf Config, st state.State) (state.State, error) {
 
 	workDirExists, workDirExistsErr = fs.PathExists(workDir)
 	if workDirExistsErr != nil {
-		return st, workDirExistsErr
+		return st, false, workDirExistsErr
 	}
 	if workDirExists {
 		fmt.Println("Warning: Working directory found from prior iteration. Will clean it up.")
 		cleanupErr := cleanup(workDir, stateDir)
 		if cleanupErr != nil {
-			return st, cleanupErr
+			return st, false, cleanupErr
 		}
 	}
 
 	assureErr := fs.AssurePrivateDir(reposDir)
 	if assureErr != nil {
-		return st, assureErr
+		return st, false, assureErr
 	}
 
 	assureErr = fs.AssurePrivateDir(backendDir)
 	if assureErr != nil {
-		return st, assureErr
+		return st, false, assureErr
 	}
 
 	assureErr = fs.AssurePrivateDir(stateDir)
 	if assureErr != nil {
-		return st, assureErr
+		return st, false, assureErr
 	}
 
 	assureErr = fs.AssurePrivateDir(workDir)
 	if assureErr != nil {
-		return st, assureErr
+		return st, false, assureErr
 	}
 
 	defer func() {
@@ -113,25 +113,25 @@ func Exec(conf Config, st state.State) (state.State, error) {
 
 	commitHashes, syncErr := conf.Sources.SyncGitRepos(reposDir)
 	if syncErr != nil {
-		return st, syncErr
+		return st, false, syncErr
 	}
 
 	cmdOcc := recurrence.GenerateCommandOccurrence(conf.Command, commitHashes)
 	if conf.Recurrence.IsDefined() {
 		if !st.LastCommandOccurrence.ShouldOccur(&conf.Recurrence, cmdOcc) {
 			fmt.Printf("Info: Recurrence policy dictates that execution should be skipped at this time.")
-			return st, nil
+			return st, true, nil
 		}
 	}
 
 	backendGenErr := conf.Sources.GenerateBackendFiles(backendDir)
 	if backendGenErr != nil {
-		return st, backendGenErr
+		return st, false, backendGenErr
 	}
 
 	mergeErr := fs.MergeDirs(workDir, append(conf.Sources.GetFsPaths(reposDir), stateDir, backendDir))
 	if mergeErr != nil {
-		return st, mergeErr
+		return st, false, mergeErr
 	}
 
 	switch conf.Command {
@@ -144,23 +144,23 @@ func Exec(conf Config, st state.State) (state.State, error) {
 	case "plan":
 		planErr := terraformPlan(workDir, conf)
 		if planErr != nil {
-			return st, planErr
+			return st, false, planErr
 		}
 	case "apply":
 		applyErr := terraformApply(workDir, conf)
 		if applyErr != nil {
-			return st, applyErr
+			return st, false, applyErr
 		}
 	case "migrate_backend":
 		migrateErr := terraformMigrateBackend(workDir, conf)
 		if migrateErr != nil {
-			return st, migrateErr
+			return st, false, migrateErr
 		}
 	}
 
 	return state.State{
 		LastCommandOccurrence: *cmdOcc,
-	}, nil
+	}, false, nil
 }
 
 func main() {
@@ -197,7 +197,7 @@ func main() {
 
 	}
 
-	newSt, err := Exec(conf, st)
+	newSt, skipped, err := Exec(conf, st)
 	if err != nil {
 		fmt.Println(err.Error())
 
@@ -215,6 +215,15 @@ func main() {
 			fmt.Println(writeErr.Error())
 			os.Exit(1)
 		}
+	}
+
+	if skipped {
+		hookErr := conf.TerminationHooks.Run(OpSkip)
+		if hookErr != nil {
+			fmt.Println(hookErr.Error())
+			os.Exit(1)
+		}
+		return
 	}
 
 	hookErr := conf.TerminationHooks.Run(OpSuccess)
