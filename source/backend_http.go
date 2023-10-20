@@ -39,7 +39,7 @@ func generateBackendAddress(address Address) string {
 	return url
 }
 
-func GenerateBackendFile(filePath string, backend BackendHttp) error {
+func (backend *BackendHttp) GenerateFile(filePath string) error {
 	funcMap := template.FuncMap{
 		"genAddr": generateBackendAddress,
 	}
@@ -62,7 +62,7 @@ func GenerateBackendFile(filePath string, backend BackendHttp) error {
 func (srcs *Sources) GenerateBackendFiles(backendDir string) error {
 	for _, source := range *srcs {
 		if source.GetType() == TypeBackendHttp {
-			genErr := GenerateBackendFile(path.Join(backendDir, source.BackendHttp.Filename), source.BackendHttp)
+			genErr := source.BackendHttp.GenerateFile(path.Join(backendDir, source.BackendHttp.Filename))
 			if genErr != nil {
 				return genErr
 			}
