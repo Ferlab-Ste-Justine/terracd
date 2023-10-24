@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	//"crypto/tls"
 	"net/http"
 	"time"
 
@@ -26,6 +25,18 @@ type MetricsClient struct {
 }
 
 func (cli *MetricsClient) Connect() error {
+	passErr := cli.Config.PushGateway.Auth.ResolvePassword()
+	if passErr != nil {
+		return passErr
+	}
+
+	tls, tlsErr := cli.Config.PushGateway.Auth.GetTlsConfigs()
+	if tlsErr != nil {
+		return tlsErr
+	}
+
+	cli.client = &http.Client{Transport: &http.Transport{TLSClientConfig: tls}}
+
 	return nil
 }
 

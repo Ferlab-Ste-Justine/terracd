@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -42,4 +44,35 @@ func (auth *Auth) ResolvePassword() error {
 	auth.Password = a.Password
 
 	return nil
+}
+
+func (auth *Auth) GetTlsConfigs() (*tls.Config, error) {
+	tlsConf := &tls.Config{}
+
+	//User credentials
+	if auth.ClientCert != "" {
+		certData, err := tls.LoadX509KeyPair(auth.ClientCert, auth.ClientKey)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("Failed to load user credentials: %s", err.Error()))
+		}
+		(*tlsConf).Certificates = []tls.Certificate{certData}
+	}
+
+	(*tlsConf).InsecureSkipVerify = false
+
+	//CA cert
+	if auth.CaCert != "" {
+		caCertContent, err := ioutil.ReadFile(auth.CaCert)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("Failed to read root certificate file: %s", err.Error()))
+		}
+		roots := x509.NewCertPool()
+		ok := roots.AppendCertsFromPEM(caCertContent)
+		if !ok {
+			return nil, errors.New("Failed to parse root certificate authority")
+		}
+		(*tlsConf).RootCAs = roots
+	}
+
+	return tlsConf, nil
 }
