@@ -17,36 +17,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	var st state.State
-	var stateErr error
-	var store state.StateStore
-	var storeErr error
-	if conf.StateStore.IsDefined() {
-		store, storeErr = conf.StateStore.GetStore()
-		if storeErr != nil {
-			fmt.Println(storeErr.Error())
-			os.Exit(1)
-		}
-		
-		initErr := store.Initialize()
-		if initErr != nil {
-			fmt.Println(initErr.Error())
-			os.Exit(1)
-		}
+	var skipped bool
+	execErr := state.WrapInState(func(st state.State) (state.State, error) {
+		var newSt state.State
+		var err error
+		newSt, skipped, err = cmd.RunConfig(conf, st)
+		return newSt, err
+	}, conf.StateStore)
 
-		defer store.Cleanup()
-
-		st, stateErr = store.Read()
-		if stateErr != nil {
-			fmt.Println(stateErr.Error())
-			os.Exit(1)
-		}
-
-	}
-
-	newSt, skipped, err := cmd.RunConfig(conf, st)
-	if err != nil {
-		fmt.Println(err.Error())
+	if execErr != nil {
+		fmt.Println(execErr.Error())
 
 		hookErr := conf.TerminationHooks.Run(hook.OpFailure)
 		if hookErr != nil {
@@ -54,14 +34,6 @@ func main() {
 		}
 
 		os.Exit(1)
-	}
-
-	if conf.StateStore.IsDefined() {
-		writeErr := store.Write(newSt)
-		if writeErr != nil {
-			fmt.Println(writeErr.Error())
-			os.Exit(1)
-		}
 	}
 
 	if skipped {

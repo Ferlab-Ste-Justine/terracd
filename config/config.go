@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Ferlab-Ste-Justine/terracd/auth"
 	"github.com/Ferlab-Ste-Justine/terracd/hook"
+	"github.com/Ferlab-Ste-Justine/terracd/metrics"
 	"github.com/Ferlab-Ste-Justine/terracd/recurrence"
 	"github.com/Ferlab-Ste-Justine/terracd/source"
 	"github.com/Ferlab-Ste-Justine/terracd/state"
@@ -30,28 +30,18 @@ type BackendMigration struct {
 	NextBackend    string `yaml:"next_backend"`
 }
 
-type ConfigMetricsPushGateway struct {
-	Url  string
-	Auth auth.Auth
-}
-
-type ConfigMetrics struct {
-	JobName     string                   `yaml:"job_name"`
-	PushGateway ConfigMetricsPushGateway `yaml:"push_gateway"`
-}
-
 type Config struct {
-	TerraformPath    string                 `yaml:"terraform_path"`
+	TerraformPath    string                      `yaml:"terraform_path"`
 	Sources          source.Sources
 	Timeouts         ConfigTimeouts
 	Recurrence       recurrence.Recurrence
-	RandomJitter     time.Duration          `yaml:"random_jitter"`
-	BackendMigration BackendMigration       `yaml:"backend_migration"`
+	RandomJitter     time.Duration               `yaml:"random_jitter"`
+	BackendMigration BackendMigration            `yaml:"backend_migration"`
 	Command          string
-	TerminationHooks hook.TerminationHooks `yaml:"termination_hooks"`
-	WorkingDirectory string                 `yaml:"working_directory"`
-	StateStore       state.StateStoreConfig `yaml:"state_store"`
-	Metrics          ConfigMetrics
+	TerminationHooks hook.TerminationHooks       `yaml:"termination_hooks"`
+	WorkingDirectory string                      `yaml:"working_directory"`
+	StateStore       state.StateStoreConfig      `yaml:"state_store"`
+	Metrics          metrics.MetricsClientConfig
 }
 
 func getConfigFilePath() string {
