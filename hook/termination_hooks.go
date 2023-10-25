@@ -15,6 +15,19 @@ const (
 	OpSkip
 )
 
+func (result OpResult) ToString() string {
+	switch result {
+	case OpSuccess:
+		return "success"
+	case OpFailure:
+		return "failure"
+	case OpSkip:
+		return "skip"
+	default:
+		return "unknown"
+	}
+}
+
 type TerminationHooks struct {
 	Success TerminationHook
 	Failure TerminationHook

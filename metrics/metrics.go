@@ -63,7 +63,7 @@ func (cli *MetricsClient) Initialize() error {
 	return nil
 }
 
-func (cli *MetricsClient) Push(cmd string, now time.Time) error {
+func (cli *MetricsClient) Push(cmd string, result string, now time.Time) error {
 	cli.timestamp.Set(float64(now.Unix()))
-	return cli.pusher.Grouping("command", cmd).Push()
+	return cli.pusher.Grouping("command", cmd).Grouping("result", result).Push()
 }
