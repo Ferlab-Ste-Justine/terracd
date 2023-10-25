@@ -23,6 +23,10 @@ type Auth struct {
 	Password     string `yaml:"-"`
 }
 
+func (auth *Auth) HasPassword() bool {
+	return auth.Password != ""
+}
+
 func (auth *Auth) ResolvePassword() error {
 	var a PasswordAuth
 

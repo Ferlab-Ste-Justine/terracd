@@ -4,10 +4,16 @@ import (
 	"net/http"
 	"time"
 
-	//"github.com/prometheus/client_golang/prometheus/push"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/push"
 
 	"github.com/Ferlab-Ste-Justine/terracd/auth"
 )
+
+type metrics struct {
+	cpuTemp  prometheus.Gauge
+	hdFailures *prometheus.CounterVec
+}
 
 type MetricsPushGatewayConfig struct {
 	Url  string
@@ -20,11 +26,14 @@ type MetricsClientConfig struct {
 }
 
 type MetricsClient struct {
-	Config MetricsClientConfig
-	client *http.Client
+	Config    MetricsClientConfig
+	pusher    *push.Pusher
+	timestamp prometheus.Gauge
 }
 
-func (cli *MetricsClient) Connect() error {
+func (cli *MetricsClient) Initialize() error {
+	cli.pusher = push.New(cli.Config.PushGateway.Url, cli.Config.JobName)
+
 	passErr := cli.Config.PushGateway.Auth.ResolvePassword()
 	if passErr != nil {
 		return passErr
@@ -35,15 +44,26 @@ func (cli *MetricsClient) Connect() error {
 		return tlsErr
 	}
 
-	cli.client = &http.Client{Transport: &http.Transport{TLSClientConfig: tls}}
+	cli.pusher = cli.pusher.Client(&http.Client{Transport: &http.Transport{TLSClientConfig: tls}})
+
+	if cli.Config.PushGateway.Auth.HasPassword() {
+		cli.pusher = cli.pusher.BasicAuth(
+			cli.Config.PushGateway.Auth.Username,
+			cli.Config.PushGateway.Auth.Password,
+		)
+	}
+
+	cli.timestamp = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "timestamp_seconds",
+		Help: "Timestamp of completion in seconds since epoch.",
+	})
+	
+	cli.pusher = cli.pusher.Collector(cli.timestamp)
 
 	return nil
 }
 
 func (cli *MetricsClient) Push(cmd string, now time.Time) error {
-	return nil
-}
-
-func(cli *MetricsClient) Close() error {
-	return nil
+	cli.timestamp.Set(float64(now.Unix()))
+	return cli.pusher.Grouping("command", cmd).Push()
 }
