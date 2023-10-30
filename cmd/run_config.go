@@ -12,7 +12,7 @@ import (
 	"github.com/Ferlab-Ste-Justine/terracd/state"
 )
 
-func cleanup(workDir string, stateDir string) error {
+func backupState(workDir string, stateDir string) error {
 	stateSrc := path.Join(workDir, "terraform.tfstate")
 	stateDest := path.Join(stateDir, "terraform.tfstate")
 	stateBackSrc := path.Join(workDir, "terraform.tfstate.backup")
@@ -42,15 +42,75 @@ func cleanup(workDir string, stateDir string) error {
 		}
 	}
 
-	removalErr := os.RemoveAll(workDir)
-	if removalErr != nil {
-		return removalErr
+	return nil
+}
+
+func cacheProviders(workDir string, cacheDir string) error {
+	lockFileSrc := path.Join(workDir, ".terraform.lock.hcl")
+	lockFileDest := path.Join(cacheDir, ".terraform.lock.hcl")
+	providerDirSrc := path.Join(workDir, ".terraform", "providers")
+	providerDirDest := path.Join(cacheDir, ".terraform", "providers")
+
+	lockFileSrcExists, lockFileSrcErr := fs.PathExists(lockFileSrc)
+	if lockFileSrcErr != nil {
+		return lockFileSrcErr
+	}
+
+	providerDirSrcExists, providerDirSrcErr := fs.PathExists(providerDirSrc)
+	if providerDirSrcErr != nil {
+		return providerDirSrcErr
+	}
+
+	providerDirDestExists, providerDirDestErr := fs.PathExists(providerDirDest)
+	if providerDirDestErr != nil {
+		return providerDirDestErr
+	}
+
+	if lockFileSrcExists && providerDirSrcExists {
+		if providerDirDestExists {
+			remErr := os.RemoveAll(providerDirDest)
+			if remErr != nil {
+				return remErr
+			}
+		}
+		
+		copyErr := fs.CopyPrivateFile(lockFileSrc, lockFileDest)
+		if copyErr != nil {
+			return copyErr
+		}
+
+		copyErr = fs.CopyDir(providerDirSrc, providerDirDest)
+		if copyErr != nil {
+			return copyErr
+		}
 	}
 
 	return nil
 }
 
+func cleanup(workDir string, stateDir string, cacheDir string, cache bool) error {
+	backupErr := backupState(workDir, stateDir)
+	if backupErr != nil {
+		return backupErr
+	}
+
+	if cache {
+		cacheErr := cacheProviders(workDir, cacheDir)
+		if cacheErr != nil {
+			return cacheErr
+		}
+	}
+
+	return os.RemoveAll(workDir)
+}
+
 func RunConfig(conf config.Config, st state.State) (state.State, bool, error) {
+	reposDir := path.Join(conf.WorkingDirectory, "repos")
+	backendDir := path.Join(conf.WorkingDirectory, "backend")
+	stateDir := path.Join(conf.WorkingDirectory, "state")
+	cacheDir := path.Join(conf.WorkingDirectory, "cache")
+	workDir := path.Join(conf.WorkingDirectory, "work")
+
 	workDirExists, workDirExistsErr := fs.PathExists(conf.WorkingDirectory)
 	if workDirExistsErr != nil {
 		return st, false, workDirExistsErr
@@ -67,18 +127,13 @@ func RunConfig(conf config.Config, st state.State) (state.State, bool, error) {
 		return st, false, chdirErr
 	}
 
-	reposDir := path.Join(conf.WorkingDirectory, "repos")
-	backendDir := path.Join(conf.WorkingDirectory, "backend")
-	stateDir := path.Join(conf.WorkingDirectory, "state")
-	workDir := path.Join(conf.WorkingDirectory, "work")
-
 	workDirExists, workDirExistsErr = fs.PathExists(workDir)
 	if workDirExistsErr != nil {
 		return st, false, workDirExistsErr
 	}
 	if workDirExists {
 		fmt.Println("Warning: Working directory found from prior iteration. Will clean it up.")
-		cleanupErr := cleanup(workDir, stateDir)
+		cleanupErr := cleanup(workDir, stateDir, cacheDir, false)
 		if cleanupErr != nil {
 			return st, false, cleanupErr
 		}
@@ -99,13 +154,18 @@ func RunConfig(conf config.Config, st state.State) (state.State, bool, error) {
 		return st, false, assureErr
 	}
 
+	assureErr = fs.AssurePrivateDir(cacheDir)
+	if assureErr != nil {
+		return st, false, assureErr
+	}
+
 	assureErr = fs.AssurePrivateDir(workDir)
 	if assureErr != nil {
 		return st, false, assureErr
 	}
 
 	defer func() {
-		cleanupErr := cleanup(workDir, stateDir)
+		cleanupErr := cleanup(workDir, stateDir, cacheDir, conf.Cache.IsDefined())
 		if cleanupErr != nil {
 			fmt.Printf("Warning: Failed to cleanup working directory at the end of execution: %s.\n", cleanupErr.Error())
 		}

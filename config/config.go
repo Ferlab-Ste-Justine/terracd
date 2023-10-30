@@ -11,6 +11,7 @@ import (
 
 	"github.com/Ferlab-Ste-Justine/terracd/hook"
 	"github.com/Ferlab-Ste-Justine/terracd/metrics"
+	"github.com/Ferlab-Ste-Justine/terracd/cache"
 	"github.com/Ferlab-Ste-Justine/terracd/recurrence"
 	"github.com/Ferlab-Ste-Justine/terracd/source"
 	"github.com/Ferlab-Ste-Justine/terracd/state"
@@ -41,6 +42,7 @@ type Config struct {
 	TerminationHooks hook.TerminationHooks       `yaml:"termination_hooks"`
 	WorkingDirectory string                      `yaml:"working_directory"`
 	StateStore       state.StateStoreConfig      `yaml:"state_store"`
+	Cache            cache.CacheConfig                  
 	Metrics          metrics.MetricsClientConfig
 }
 
@@ -94,6 +96,10 @@ func GetConfig() (Config, error) {
 
 	if c.Recurrence.IsDefined() && (!c.StateStore.IsDefined()) {
 		return c, errors.New("If a reccurrence is defined, a state store must also be defined in order to enforce it")
+	}
+
+	if c.Cache.IsDefined() && (!c.StateStore.IsDefined()) {
+		return c, errors.New("If cache is defined, a state store must also be defined in order to manage it")
 	}
 
 	return c, nil

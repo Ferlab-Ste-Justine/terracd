@@ -1,6 +1,9 @@
 package fs
 
 import (
+	"crypto/sha256"
+	"fmt"
+	"io"
 	"io/fs"
 	"io/ioutil"
 	"os"
@@ -8,6 +11,22 @@ import (
 	"path/filepath"
 	"strings"
 )
+
+func GetFileSha256(src string) (string, error) {
+	fHandle, handleErr := os.Open(src)
+	if handleErr != nil {
+	  return "", handleErr
+	}
+	defer fHandle.Close()
+  
+	hash := sha256.New()
+	_, copyErr := io.Copy(hash, fHandle)
+	if copyErr != nil {
+		return "", copyErr
+	}
+  
+	return fmt.Sprintf("%x", hash.Sum(nil)), nil
+}
 
 func PathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
