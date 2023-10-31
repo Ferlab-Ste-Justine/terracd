@@ -19,8 +19,8 @@ func GetCacheInfo(workDir string, conf CacheConfig) (*CacheInfo, error) {
 	return &CacheInfo{hash}, nil
 }
 
-func (info *CacheInfo) ShouldUse(otherInfo *CacheInfo, lastCmd string) bool {
-	return info.VersionsHash == otherInfo.VersionsHash && info.VersionsHash != "" && lastCmd != "wait"
+func (info *CacheInfo) ShouldUse(otherInfo *CacheInfo) bool {
+	return info.VersionsHash == otherInfo.VersionsHash && info.VersionsHash != ""
 }
 
 type CacheConfig struct {

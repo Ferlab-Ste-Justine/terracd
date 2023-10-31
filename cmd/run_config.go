@@ -6,6 +6,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/Ferlab-Ste-Justine/terracd/cache"
 	"github.com/Ferlab-Ste-Justine/terracd/config"
 	"github.com/Ferlab-Ste-Justine/terracd/fs"
 	"github.com/Ferlab-Ste-Justine/terracd/recurrence"
@@ -165,7 +166,7 @@ func RunConfig(conf config.Config, st state.State) (state.State, bool, error) {
 	}
 
 	defer func() {
-		cleanupErr := cleanup(workDir, stateDir, cacheDir, conf.Cache.IsDefined())
+		cleanupErr := cleanup(workDir, stateDir, cacheDir, conf.Cache.IsDefined() && conf.Command != "wait")
 		if cleanupErr != nil {
 			fmt.Printf("Warning: Failed to cleanup working directory at the end of execution: %s.\n", cleanupErr.Error())
 		}
@@ -189,7 +190,22 @@ func RunConfig(conf config.Config, st state.State) (state.State, bool, error) {
 		return st, false, backendGenErr
 	}
 
-	mergeErr := fs.MergeDirs(workDir, append(conf.Sources.GetFsPaths(reposDir), stateDir, backendDir))
+	mergeDirs := append(conf.Sources.GetFsPaths(reposDir), stateDir, backendDir)
+
+	if conf.Cache.IsDefined() {
+		cacheInfo, cacheInfoErr := cache.GetCacheInfo(workDir, conf.Cache)
+		if cacheInfoErr != nil {
+			return st, false, cacheInfoErr
+		}
+	
+		if cacheInfo.ShouldUse(&st.CacheInfo) {
+			mergeDirs = append(mergeDirs, cacheDir)
+		}
+
+		st.CacheInfo = *cacheInfo
+	}
+
+	mergeErr := fs.MergeDirs(workDir, mergeDirs)
 	if mergeErr != nil {
 		return st, false, mergeErr
 	}
