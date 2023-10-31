@@ -80,6 +80,11 @@ func cacheProviders(workDir string, cacheDir string) error {
 			return copyErr
 		}
 
+		ensErr := fs.AssurePrivateDir(providerDirDest)
+		if ensErr != nil {
+			return ensErr
+		}
+
 		copyErr = fs.CopyDir(providerDirSrc, providerDirDest)
 		if copyErr != nil {
 			return copyErr
@@ -185,6 +190,10 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 	}
 
 	mergeDirs := append(conf.Sources.GetFsPaths(paths.Repos), paths.State, paths.Backend)
+	mergeErr := fs.MergeDirs(paths.Work, mergeDirs)
+	if mergeErr != nil {
+		return st, false, mergeErr
+	}
 
 	if conf.Cache.IsDefined() {
 		cacheInfo, cacheInfoErr := cache.GetCacheInfo(paths.Work, conf.Cache)
@@ -193,15 +202,13 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 		}
 	
 		if cacheInfo.ShouldUse(&st.CacheInfo) {
-			mergeDirs = append(mergeDirs, paths.Cache)
+			mergeErr := fs.MergeDirs(paths.Work, []string{paths.Cache})
+			if mergeErr != nil {
+				return st, false, mergeErr
+			}
 		}
 
 		st.CacheInfo = *cacheInfo
-	}
-
-	mergeErr := fs.MergeDirs(paths.Work, mergeDirs)
-	if mergeErr != nil {
-		return st, false, mergeErr
 	}
 
 	switch conf.Command {
