@@ -12,6 +12,28 @@ import (
 	"strings"
 )
 
+type Paths struct {
+	Root    string
+	Repos   string
+	Backend string
+	State   string
+	FsStore string
+	Cache   string
+	Work    string
+}
+
+func GetPaths(rootDir string) Paths {
+	return Paths{
+		Root: rootDir,
+		Repos: path.Join(rootDir, "repos"),
+		Backend: path.Join(rootDir, "backend"),
+		State: path.Join(rootDir, "state"),
+		FsStore: path.Join(rootDir, "fs-store"),
+		Cache: path.Join(rootDir, "cache"),
+		Work: path.Join(rootDir, "work"),
+	}
+}
+
 func GetFileSha256(src string) (string, error) {
 	fHandle, handleErr := os.Open(src)
 	if handleErr != nil {
@@ -26,6 +48,16 @@ func GetFileSha256(src string) (string, error) {
 	}
   
 	return fmt.Sprintf("%x", hash.Sum(nil)), nil
+}
+
+func EnsureContainingDirExists(path string) error {
+	dir := filepath.Dir(path)
+	
+	if dir != "." && dir != "/" {
+		return AssurePrivateDir(dir)
+	}
+	
+	return nil
 }
 
 func PathExists(path string) (bool, error) {

@@ -5,14 +5,17 @@ import (
 	"fmt"
 	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
+
+	"github.com/Ferlab-Ste-Justine/terracd/fs"
 )
 
 type FsConfig struct {
-	Path string
+	Enabled bool
+	Path    string `yaml:"-"`
 }
 
 func (conf *FsConfig) IsDefined() bool {
-	return conf.Path != ""
+	return conf.Enabled
 }
 
 type FsStateStore struct {
@@ -25,6 +28,14 @@ func (store *FsStateStore) Initialize() error {
 
 func (store *FsStateStore) Read() (State, error) {
 	var st State
+
+	stExists, stExistsErr := fs.PathExists(store.Config.Path)
+	if stExistsErr != nil {
+		return st, stExistsErr
+	}
+	if !stExists {
+		return st, nil
+	}
 
 	input, err := ioutil.ReadFile(store.Config.Path)
 	if err != nil {
@@ -43,6 +54,11 @@ func (store *FsStateStore) Write(state State) error {
 	output, err := yaml.Marshal(&state)
 	if err != nil {
 		return errors.New(fmt.Sprintf("Error serializing the state file: %s", err.Error()))
+	}
+
+	err = fs.EnsureContainingDirExists(store.Config.Path)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Error creating the state file directory: %s", err.Error()))
 	}
 
 	err = ioutil.WriteFile(store.Config.Path, output, 0600)

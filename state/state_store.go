@@ -20,9 +20,14 @@ func (conf *StateStoreConfig) IsDefined() bool {
 	return conf.Fs.IsDefined() || conf.Etcd.IsDefined()
 }
 
-func (conf *StateStoreConfig) GetStore() (StateStore, error) {
+func (conf *StateStoreConfig) GetStore(fsStorePath string) (StateStore, error) {
 	if conf.Fs.IsDefined() {
-		return &FsStateStore{Config: conf.Fs}, nil
+		return &FsStateStore{
+			Config: FsConfig{
+				Enabled: true,
+				Path: fsStorePath,
+			},
+		}, nil
 	} else if conf.Etcd.IsDefined() {
 		return &EtcdStateStore{Config: conf.Etcd}, nil
 	}

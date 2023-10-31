@@ -1,25 +1,27 @@
 package state
 
 import (
+	"path"
+
 	"github.com/Ferlab-Ste-Justine/terracd/cache"
+	"github.com/Ferlab-Ste-Justine/terracd/fs"
 	"github.com/Ferlab-Ste-Justine/terracd/recurrence"
 )
 
 type State struct {
 	LastCommandOccurrence recurrence.CommandOccurrence `yaml:"last_command_occurrence"`
 	CacheInfo cache.CacheInfo						   `yaml:"cache_info"`
-	//Metrics Metrics
 }
 
 type StateScopedFn func(State) (State, error)
 
-func WrapInState(fn StateScopedFn, conf StateStoreConfig) error {
+func WrapInState(fn StateScopedFn, conf StateStoreConfig, paths fs.Paths) error {
 	var st State
 	var stateErr error
 	var store StateStore
 	var storeErr error
 	if conf.IsDefined() {
-		store, storeErr = conf.GetStore()
+		store, storeErr = conf.GetStore(path.Join(paths.FsStore, "state.yml"))
 		if storeErr != nil {
 			return storeErr
 		}

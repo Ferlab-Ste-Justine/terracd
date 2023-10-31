@@ -61,6 +61,10 @@ func (store *EtcdStateStore) Read() (State, error) {
 		return st, errors.New(fmt.Sprintf("Error retrieving state info: %s", err.Error()))
 	}
 
+	if !keyInfo.Found() {
+		return st, nil
+	}
+
 	err = yaml.Unmarshal([]byte(keyInfo.Value), &st)
 	if err != nil {
 		return st, errors.New(fmt.Sprintf("Error deserializing the state info: %s", err.Error()))

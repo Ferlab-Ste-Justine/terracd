@@ -105,74 +105,68 @@ func cleanup(workDir string, stateDir string, cacheDir string, cache bool) error
 	return os.RemoveAll(workDir)
 }
 
-func RunConfig(conf config.Config, st state.State) (state.State, bool, error) {
-	reposDir := path.Join(conf.WorkingDirectory, "repos")
-	backendDir := path.Join(conf.WorkingDirectory, "backend")
-	stateDir := path.Join(conf.WorkingDirectory, "state")
-	cacheDir := path.Join(conf.WorkingDirectory, "cache")
-	workDir := path.Join(conf.WorkingDirectory, "work")
-
-	workDirExists, workDirExistsErr := fs.PathExists(conf.WorkingDirectory)
+func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State, bool, error) {
+	workDirExists, workDirExistsErr := fs.PathExists(paths.Root)
 	if workDirExistsErr != nil {
 		return st, false, workDirExistsErr
 	}
 	if !workDirExists {
-		assureErr := fs.AssurePrivateDir(conf.WorkingDirectory)
+		assureErr := fs.AssurePrivateDir(paths.Root)
 		if assureErr != nil {
 			return st, false, assureErr
 		}
 	}
 
-	chdirErr := os.Chdir(conf.WorkingDirectory)
+	chdirErr := os.Chdir(paths.Root)
 	if chdirErr != nil {
 		return st, false, chdirErr
 	}
 
-	workDirExists, workDirExistsErr = fs.PathExists(workDir)
+	workDirExists, workDirExistsErr = fs.PathExists(paths.Work)
 	if workDirExistsErr != nil {
 		return st, false, workDirExistsErr
 	}
 	if workDirExists {
 		fmt.Println("Warning: Working directory found from prior iteration. Will clean it up.")
-		cleanupErr := cleanup(workDir, stateDir, cacheDir, false)
+		cleanupErr := cleanup(paths.Work, paths.State, paths.Cache, false)
 		if cleanupErr != nil {
 			return st, false, cleanupErr
 		}
 	}
 
-	assureErr := fs.AssurePrivateDir(reposDir)
+	assureErr := fs.AssurePrivateDir(paths.Repos)
 	if assureErr != nil {
 		return st, false, assureErr
 	}
 
-	assureErr = fs.AssurePrivateDir(backendDir)
+	assureErr = fs.AssurePrivateDir(paths.Backend)
 	if assureErr != nil {
 		return st, false, assureErr
 	}
 
-	assureErr = fs.AssurePrivateDir(stateDir)
+	assureErr = fs.AssurePrivateDir(paths.State)
 	if assureErr != nil {
 		return st, false, assureErr
 	}
 
-	assureErr = fs.AssurePrivateDir(cacheDir)
+	assureErr = fs.AssurePrivateDir(paths.Cache)
 	if assureErr != nil {
 		return st, false, assureErr
 	}
 
-	assureErr = fs.AssurePrivateDir(workDir)
+	assureErr = fs.AssurePrivateDir(paths.Work)
 	if assureErr != nil {
 		return st, false, assureErr
 	}
 
 	defer func() {
-		cleanupErr := cleanup(workDir, stateDir, cacheDir, conf.Cache.IsDefined() && conf.Command != "wait")
+		cleanupErr := cleanup(paths.Work, paths.State, paths.Cache, conf.Cache.IsDefined() && conf.Command != "wait")
 		if cleanupErr != nil {
 			fmt.Printf("Warning: Failed to cleanup working directory at the end of execution: %s.\n", cleanupErr.Error())
 		}
 	}()
 
-	commitHashes, syncErr := conf.Sources.SyncGitRepos(reposDir)
+	commitHashes, syncErr := conf.Sources.SyncGitRepos(paths.Repos)
 	if syncErr != nil {
 		return st, false, syncErr
 	}
@@ -185,27 +179,27 @@ func RunConfig(conf config.Config, st state.State) (state.State, bool, error) {
 		}
 	}
 
-	backendGenErr := conf.Sources.GenerateBackendFiles(backendDir)
+	backendGenErr := conf.Sources.GenerateBackendFiles(paths.Backend)
 	if backendGenErr != nil {
 		return st, false, backendGenErr
 	}
 
-	mergeDirs := append(conf.Sources.GetFsPaths(reposDir), stateDir, backendDir)
+	mergeDirs := append(conf.Sources.GetFsPaths(paths.Repos), paths.State, paths.Backend)
 
 	if conf.Cache.IsDefined() {
-		cacheInfo, cacheInfoErr := cache.GetCacheInfo(workDir, conf.Cache)
+		cacheInfo, cacheInfoErr := cache.GetCacheInfo(paths.Work, conf.Cache)
 		if cacheInfoErr != nil {
 			return st, false, cacheInfoErr
 		}
 	
 		if cacheInfo.ShouldUse(&st.CacheInfo) {
-			mergeDirs = append(mergeDirs, cacheDir)
+			mergeDirs = append(mergeDirs, paths.Cache)
 		}
 
 		st.CacheInfo = *cacheInfo
 	}
 
-	mergeErr := fs.MergeDirs(workDir, mergeDirs)
+	mergeErr := fs.MergeDirs(paths.Work, mergeDirs)
 	if mergeErr != nil {
 		return st, false, mergeErr
 	}
@@ -218,17 +212,17 @@ func RunConfig(conf config.Config, st state.State) (state.State, bool, error) {
 		}
 		time.Sleep(waitTime)
 	case "plan":
-		planErr := Plan(workDir, conf)
+		planErr := Plan(paths.Work, conf)
 		if planErr != nil {
 			return st, false, planErr
 		}
 	case "apply":
-		applyErr := Apply(workDir, conf)
+		applyErr := Apply(paths.Work, conf)
 		if applyErr != nil {
 			return st, false, applyErr
 		}
 	case "migrate_backend":
-		migrateErr := MigrateBackend(workDir, conf)
+		migrateErr := MigrateBackend(paths.Work, conf)
 		if migrateErr != nil {
 			return st, false, migrateErr
 		}
