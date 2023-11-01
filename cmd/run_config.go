@@ -213,6 +213,7 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 	}
 
 	if conf.RandomJitter > 0 {
+		jitter.Seed()
 		sleepDuration := jitter.GetRandomDuration(conf.RandomJitter)
 		fmt.Printf("Info: Sleeping for %s\n", jitter.Stringify(sleepDuration))
 		time.Sleep(sleepDuration)

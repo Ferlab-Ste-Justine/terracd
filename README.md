@@ -16,6 +16,10 @@ The file has the following top-level fields:
 - **terraform_path**: Path to the terraform binary
 - **working_directory**: Directory where terracd will assemble its workspace from the various sources. Defaults to the working directory of the process if omitted.
 - **timeouts**: Execution timeouts for the various stages of the terraform lifecycle
+- **random_jitter**: Golang duration format indicating a random start delay up to that duration. Useful to spread the load a little when you use a scheduler that triggers at the same time for all your jobs.
+- **state_store**: Storage strategy to store a persistent terracd state between executions. Needed to support provider caching and recurrence control.
+- **recurrence**: Allows more fine-grained control on when terracd re-executes beyond what schedulers normallly support. Note that it is dependant on a state store.
+- **cache**: Allows the caching of terraform providers (currently only supported on the filesystem of stable runtime environments) between executions of terracd. Note that it is dependent on a state store.
 - **sources**: Array of terraform file sources to be merged together and applied on
 - **command**: Command to execute. Can be **apply** to run **terraform apply**, **plan** to run **terraform plan**, **migrate_backend** to migrate the terraform state to another backend file or **wait** to simply assemble all the sources together and wait a given duration before exiting (useful for importing resources). Defaults to **apply** if omitted.
 - **backend_migration**: Parameters specifying the backend files to rotate when migrating your backend.
@@ -28,6 +32,21 @@ The **timeouts** entry has the following fields (each taking the duration string
   - **wait**: Execution timeout for the **wait** command.
 
 Note that the default behavior is not to apply any timeouts for fields that are omitted.
+
+The **state_store** entry has the following fields:
+- **fs**: Configuration if you want to store terracd's state under **working_directory** in a stable runtime environment (ex: an automation server, but not a kubernetes cron job). It has a single **enabled** field which should be set to **true** (boolean value) if you want to use the filesystem
+- **etcd**: Configuration if you want to store terracd's state in a remote **etcd** store. It has the following fields:
+  - **prefix**: Key prefix to store the state under in etcd
+  - **Endpoints**: Endpoints of your etcd store
+  - **connection_timeout**: Timeout for the etcd connection
+  - **request_timeout**: Timeout for individual etcd requests
+  - **retry_interval**: Retry interval to wait for after an etcd request failed
+  - **retries**: Number of retries to perform when an etcd request fails before giving up
+  - **auth**: mTLS or tls + password authentication parameters. It takes the following fields:
+    - **ca_cert**: Path to a CA certificate validating the server certificates of the etcd cluster.
+    - **client_cert**: Client certificate to use to authentify itself to the cluster when using mTLS.
+    - **client_key**: Client private key to use to authentify itself to the cluster when using mTLS.
+    - **password_auth**: Yaml file containing a **username** and **password** key to authentify against an etcd cluster using password authentication.
 
 Each **sources** entry can take one of the following 3 forms:
 ```
@@ -58,10 +77,16 @@ Each **sources** entry can take one of the following 3 forms:
 
 Note that secret parameters (username/password or client certificate) are absent from the **backend_http** source. They should be passed via environment variables when running terracd.
 
+The **recurrence** entry takes the following fields:
+- **min_interval**: Minimum interval of time between execution. If terracd finds that less than this interval of time has elapsed since the last time it ran, it will skip its execution.
+- **git_triggers**: Boolean flag indicating whether a change in the git history of any of its git sources should also trigger a change, despite the minimum interval of time not having elapsed.
+
+The **cache** entry takes the following field:
+- **versions_file**: Path to a terraform provider versions file to hash in its assembled runtime directory. If the sha256 checksum value of this file changes, the cached providers will be discarded and redownloaded.
+
 The **backend_migration** parameter takes the following fields:
   - **current_backend**: File name of the current backend to migrate from. It is assumed to be relative filename that will be part of the files assembled in the working directory.
   - **next_backend**: Absolute file name of the next backend to migrate to. It is assumed to be an absolute path not present in the working directory.
-
 
 The **termination_hooks** parameter takes the following fields:
   - **always**: Always call a hook. If defined, it will always override the success/failure hooks.
@@ -224,8 +249,3 @@ I'll get the following runtime error with terracd:
 ```
 Aborting as forbidden operation is about to be performed on protected resource "module.filemon.local_file.file"
 ```
-
-# Missing Functionality
-
-The following functionality is planned, but not yet implemented:
-  - Support for fluentd logger
