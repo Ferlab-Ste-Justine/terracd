@@ -83,7 +83,7 @@ func CopyPrivateFile(src string, dest string) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(dest, input, 0660)
+	err = ioutil.WriteFile(dest, input, 0770)
 	if err != nil {
 		return err
 	}
