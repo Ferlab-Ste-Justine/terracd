@@ -179,7 +179,7 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 	cmdOcc := recurrence.GenerateCommandOccurrence(conf.Command, commitHashes)
 	if conf.Recurrence.IsDefined() {
 		if !st.LastCommandOccurrence.ShouldOccur(&conf.Recurrence, cmdOcc) {
-			fmt.Printf("Info: Recurrence policy dictates that execution should be skipped at this time.")
+			fmt.Println("Info: Recurrence policy dictates that execution should be skipped at this time.")
 			return st, true, nil
 		}
 	}

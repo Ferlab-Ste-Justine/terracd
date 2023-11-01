@@ -68,7 +68,7 @@ func (last *CommandOccurrence) ShouldOccur(rec *Recurrence, next *CommandOccurre
 			return true
 		}
 
-		return last.Occurrence.Timestamp.Add(rec.MinInterval).After(next.Occurrence.Timestamp)
+		return last.Occurrence.Timestamp.Add(rec.MinInterval).Before(next.Occurrence.Timestamp)
 	}
 
 	return true
