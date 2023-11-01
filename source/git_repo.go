@@ -104,7 +104,7 @@ func (repo *GitRepo) Sync(dir string) (CommitHash, error) {
 		Url: repo.Url,
 		Ref: repo.Ref,
 		Path: repo.Path,
-		Hash: head.String(),
+		Hash: head.Hash().String(),
 	}, nil
 }
 
