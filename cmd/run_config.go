@@ -9,6 +9,7 @@ import (
 	"github.com/Ferlab-Ste-Justine/terracd/cache"
 	"github.com/Ferlab-Ste-Justine/terracd/config"
 	"github.com/Ferlab-Ste-Justine/terracd/fs"
+	"github.com/Ferlab-Ste-Justine/terracd/jitter"
 	"github.com/Ferlab-Ste-Justine/terracd/recurrence"
 	"github.com/Ferlab-Ste-Justine/terracd/state"
 )
@@ -209,6 +210,12 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 				return st, false, mergeErr
 			}
 		}
+	}
+
+	if conf.RandomJitter > 0 {
+		sleepDuration := jitter.GetRandomDuration(conf.RandomJitter)
+		fmt.Printf("Info: Sleeping for %s\n", jitter.Stringify(sleepDuration))
+		time.Sleep(sleepDuration)
 	}
 
 	switch conf.Command {
