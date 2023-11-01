@@ -13,10 +13,23 @@ const (
 	TypeBackendHttp
 )
 
+func (srcType SourceType) ToString() string {
+	switch srcType {
+	case TypeGitRepo:
+		return "GitRepo"
+	case TypeDirectory:
+		return "Directory"
+	case TypeBackendHttp:
+		return "BackendHttp"
+	default:
+		return "undefined"
+	}
+}
+
 type Source struct {
 	Dir         string
-	GitRepo        GitRepo
-	BackendHttp BackendHttp     `yaml:"backend_http"`
+	GitRepo     GitRepo     `yaml:"repo"`
+	BackendHttp BackendHttp `yaml:"backend_http"`
 }
 
 func (src *Source) GetType() SourceType {

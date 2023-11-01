@@ -102,5 +102,11 @@ func GetConfig() (Config, error) {
 		return c, errors.New("If cache is defined, a state store must also be defined in order to manage it")
 	}
 
+	for _, src := range c.Sources {
+		if src.GetType() == source.TypeUndefined {
+			return c, errors.New("One of the listed sources could not be properly interpreted")
+		}
+	}
+
 	return c, nil
 }
