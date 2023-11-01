@@ -85,7 +85,7 @@ func cacheProviders(workDir string, cacheDir string) error {
 			return ensErr
 		}
 
-		copyErr = fs.CopyDir(providerDirSrc, providerDirDest)
+		copyErr = fs.CopyDir(providerDirDest, providerDirSrc)
 		if copyErr != nil {
 			return copyErr
 		}
@@ -195,8 +195,10 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 		return st, false, mergeErr
 	}
 
+	var cacheInfo cache.CacheInfo
+	var cacheInfoErr error
 	if conf.Cache.IsDefined() {
-		cacheInfo, cacheInfoErr := cache.GetCacheInfo(paths.Work, conf.Cache)
+		cacheInfo, cacheInfoErr = cache.GetCacheInfo(paths.Work, conf.Cache)
 		if cacheInfoErr != nil {
 			return st, false, cacheInfoErr
 		}
@@ -207,8 +209,6 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 				return st, false, mergeErr
 			}
 		}
-
-		st.CacheInfo = *cacheInfo
 	}
 
 	switch conf.Command {
@@ -237,5 +237,6 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 
 	return state.State{
 		LastCommandOccurrence: *cmdOcc,
+		CacheInfo: cacheInfo,
 	}, false, nil
 }
