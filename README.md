@@ -20,6 +20,7 @@ The file has the following top-level fields:
 - **state_store**: Storage strategy to store a persistent terracd state between executions. Needed to support provider caching and recurrence control.
 - **recurrence**: Allows more fine-grained control on when terracd re-executes beyond what schedulers normallly support. Note that it is dependant on a state store.
 - **cache**: Allows the caching of terraform providers (currently only supported on the filesystem of stable runtime environments) between executions of terracd. Note that it is dependent on a state store.
+- **metrics**: Specify configuration to push timestamp metric on a prometheus pushgateway. Note that since only a stateless timestamp metric is currently exported, a state store is **not** necessary to use this feature.
 - **sources**: Array of terraform file sources to be merged together and applied on
 - **command**: Command to execute. Can be **apply** to run **terraform apply**, **plan** to run **terraform plan**, **migrate_backend** to migrate the terraform state to another backend file or **wait** to simply assemble all the sources together and wait a given duration before exiting (useful for importing resources). Defaults to **apply** if omitted.
 - **backend_migration**: Parameters specifying the backend files to rotate when migrating your backend.
@@ -83,6 +84,16 @@ The **recurrence** entry takes the following fields:
 
 The **cache** entry takes the following field:
 - **versions_file**: Path to a terraform provider versions file to hash in its assembled runtime directory. If the sha256 checksum value of this file changes, the cached providers will be discarded and redownloaded.
+
+The **metrics** entry takes the following fields:
+- **job_name**: Job tag to provide to the exported metric
+- **pushgateway**: Parameters to communicate with the prometheus pushgateway. It takes the following fields:
+  - **url**: Url of the prometheus pushgateway.
+  - **auth**: mTLS or tls + password authentication parameters. It takes the following fields:
+    - **ca_cert**: Path to a CA certificate validating the server certificates of the pushgateway.
+    - **client_cert**: Client certificate to use to authentify itself to the pushgateway when using mTLS.
+    - **client_key**: Client private key to use to authentify itself to the pushgateway when using mTLS.
+    - **password_auth**: Yaml file containing a **username** and **password** key to authentify against a pushgateway using password authentication.
 
 The **backend_migration** parameter takes the following fields:
   - **current_backend**: File name of the current backend to migrate from. It is assumed to be relative filename that will be part of the files assembled in the working directory.
