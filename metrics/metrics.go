@@ -22,7 +22,11 @@ type MetricsPushGatewayConfig struct {
 
 type MetricsClientConfig struct {
 	JobName     string                   `yaml:"job_name"`
-	PushGateway MetricsPushGatewayConfig `yaml:"push_gateway"`
+	PushGateway MetricsPushGatewayConfig `yaml:"pushgateway"`
+}
+
+func (conf *MetricsClientConfig) IsDefined() bool {
+	return conf.JobName != ""
 }
 
 type MetricsClient struct {
@@ -54,8 +58,8 @@ func (cli *MetricsClient) Initialize() error {
 	}
 
 	cli.timestamp = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "timestamp_seconds",
-		Help: "Timestamp of completion in seconds since epoch.",
+		Name: "terracd_timestamp_seconds",
+		Help: "Timestamp of completion for terracd command in seconds since epoch.",
 	})
 	
 	cli.pusher = cli.pusher.Collector(cli.timestamp)
@@ -66,4 +70,19 @@ func (cli *MetricsClient) Initialize() error {
 func (cli *MetricsClient) Push(cmd string, result string, now time.Time) error {
 	cli.timestamp.Set(float64(now.Unix()))
 	return cli.pusher.Grouping("command", cmd).Grouping("result", result).Push()
+}
+
+func PushMetrics(conf MetricsClientConfig, cmd string, result string, now time.Time) error {
+	if !conf.IsDefined() {
+		return nil
+	}
+
+	cli := MetricsClient{Config: conf}
+
+	err := cli.Initialize()
+	if err != nil {
+		return err
+	}
+
+	return cli.Push(cmd, result, now)
 }

@@ -123,10 +123,22 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 		}
 	}
 
+	previousWd, previousWdErr := os.Getwd()
+	if previousWdErr != nil {
+		return st, false, previousWdErr
+	}
+
 	chdirErr := os.Chdir(paths.Root)
 	if chdirErr != nil {
 		return st, false, chdirErr
 	}
+
+	defer func() {
+		chdirErr := os.Chdir(previousWd)
+		if chdirErr != nil {
+			fmt.Printf("Warning: Failed reverting working directory after running terraform: %s\n", chdirErr.Error())
+		}
+	}()
 
 	workDirExists, workDirExistsErr = fs.PathExists(paths.Work)
 	if workDirExistsErr != nil {
