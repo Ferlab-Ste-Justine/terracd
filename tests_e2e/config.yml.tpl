@@ -24,16 +24,16 @@ recurrence:
 termination_hooks:
   success:
     command:
-      command: test_e2e/hook.sh
+      command: tests_e2e/hook.sh
       args:
         - success
   skip:
     command:
-      command: test_e2e/hook.sh
+      command: tests_e2e/hook.sh
       args:
         - skip
   failure:
     command:
-      command: test_e2e/hook.sh
+      command: tests_e2e/hook.sh
       args:
         - failure
