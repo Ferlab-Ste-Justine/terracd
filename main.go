@@ -13,11 +13,11 @@ import (
 	"github.com/Ferlab-Ste-Justine/terracd/state"
 )
 
-func main() {
+func MainNoExit() int {
 	conf, configErr := config.GetConfig()
 	if configErr != nil {
 		fmt.Println(configErr.Error())
-		os.Exit(1)
+		return 1
 	}
 
 	paths := fs.GetPaths(conf.WorkingDirectory)
@@ -44,7 +44,7 @@ func main() {
 	now := time.Now()
 	hookErr := conf.TerminationHooks.Run(opResult)
 	metricsErr := metrics.PushMetrics(conf.Metrics, conf.Command, opResult.ToString(), now)
-	
+
 	if hookErr != nil {
 		fmt.Println(hookErr.Error())
 	}
@@ -54,6 +54,13 @@ func main() {
 	}
 
 	if hookErr != nil || metricsErr != nil || execErr != nil {
-		os.Exit(1)
+		return 1
 	}
+
+	return 0
+}
+
+func main() {
+	code := MainNoExit()
+	os.Exit(code)
 }

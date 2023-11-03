@@ -1,6 +1,6 @@
 terraform_path: {{ .TerraformPath }}
 command: {{ .Command }}
-working_directory: tests_e2e/runtime
+working_directory: e2e_test/runtime
 sources:
 {{range .Sources -}}
   - dir: "{{.Dir}}"
@@ -24,16 +24,16 @@ recurrence:
 termination_hooks:
   success:
     command:
-      command: tests_e2e/hook.sh
+      command: e2e_test/hook.sh
       args:
         - success
   skip:
     command:
-      command: tests_e2e/hook.sh
+      command: e2e_test/hook.sh
       args:
         - skip
   failure:
     command:
-      command: tests_e2e/hook.sh
+      command: e2e_test/hook.sh
       args:
         - failure

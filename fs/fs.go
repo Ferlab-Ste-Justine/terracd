@@ -73,6 +73,19 @@ func PathExists(path string) (bool, error) {
 	return true, nil
 }
 
+func EnsureFileNotExists(fPath string) error {
+	fExists, fExistsErr := PathExists(fPath)
+	if fExistsErr != nil {
+		return fExistsErr
+	}
+
+	if !fExists {
+		return nil
+	}
+
+	return os.Remove(fPath)
+}
+
 func AssurePrivateDir(dir string) error {
 	return os.MkdirAll(dir, 0770)
 }
