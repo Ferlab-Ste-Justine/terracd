@@ -1,8 +1,10 @@
+name: Upload Artifacts
+
 on:
   push:
     tags:
       - 'v*'
-name: Upload Artifacts
+
 jobs:
   upload:
     runs-on: ubuntu-20.04

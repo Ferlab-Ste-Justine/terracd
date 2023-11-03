@@ -6,7 +6,7 @@ on:
       - v*
 
 jobs:
-  build:
+  publish:
     name: Publish Image
     runs-on: ubuntu-22.04
     steps:
