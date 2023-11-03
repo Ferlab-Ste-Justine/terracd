@@ -69,6 +69,8 @@ func (last *CommandOccurrence) ShouldOccur(rec *Recurrence, next *CommandOccurre
 		}
 
 		return last.Occurrence.Timestamp.Add(rec.MinInterval).Before(next.Occurrence.Timestamp)
+	} else if last.Command == "destroy" {
+		return false
 	}
 
 	return true

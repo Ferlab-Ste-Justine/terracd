@@ -112,6 +112,8 @@ func cleanup(workDir string, stateDir string, cacheDir string, cache bool) error
 }
 
 func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State, bool, error) {
+	fmt.Printf("Info: Running %s command.\n", conf.Command)
+	
 	workDirExists, workDirExistsErr := fs.PathExists(paths.Root)
 	if workDirExistsErr != nil {
 		return st, false, workDirExistsErr
@@ -247,6 +249,11 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 		applyErr := Apply(paths.Work, conf)
 		if applyErr != nil {
 			return st, false, applyErr
+		}
+	case "destroy":
+		destroyErr := Destroy(paths.Work, conf)
+		if destroyErr != nil {
+			return st, false, destroyErr
 		}
 	case "migrate_backend":
 		migrateErr := MigrateBackend(paths.Work, conf)

@@ -18,12 +18,13 @@ import (
 )
 
 type ConfigTimeouts struct {
-	TerraformInit  time.Duration `yaml:"terraform_init"`
-	TerraformPlan  time.Duration `yaml:"terraform_plan"`
-	TerraformApply time.Duration `yaml:"terraform_apply"`
-	TerraformPull  time.Duration `yaml:"terraform_pull"`
-	TerraformPush  time.Duration `yaml:"terraform_push"`
-	Wait           time.Duration
+	TerraformInit    time.Duration `yaml:"terraform_init"`
+	TerraformPlan    time.Duration `yaml:"terraform_plan"`
+	TerraformApply   time.Duration `yaml:"terraform_apply"`
+	TerraformDestroy time.Duration `yaml:"terraform_destroy"`
+	TerraformPull    time.Duration `yaml:"terraform_pull"`
+	TerraformPush    time.Duration `yaml:"terraform_push"`
+	Wait             time.Duration
 }
 
 type BackendMigration struct {
@@ -70,8 +71,8 @@ func GetConfig() (Config, error) {
 		c.Command = "apply"
 	}
 
-	if c.Command != "apply" && c.Command != "plan" && c.Command != "wait" && c.Command != "migrate_backend" {
-		return c, errors.New("Valid command values can only be 'plan', 'apply', 'wait' or 'migrate_backend'")
+	if c.Command != "apply" && c.Command != "plan" && c.Command != "destroy" && c.Command != "wait" && c.Command != "migrate_backend" {
+		return c, errors.New("Valid command values can only be 'plan', 'apply', 'destroy', 'wait' or 'migrate_backend'")
 	}
 
 	for _, thook := range []hook.TerminationHook{c.TerminationHooks.Success, c.TerminationHooks.Failure, c.TerminationHooks.Always} {

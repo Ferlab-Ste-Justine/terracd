@@ -80,6 +80,26 @@ func Apply(dir string, planName string, terraformPath string, timeout time.Durat
 	return nil
 }
 
+func Destroy(dir string, terraformPath string, timeout time.Duration) error {
+	tf, err := tfexec.NewTerraform(dir, terraformPath)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Error preparing terraform in directory \"%s\": %s", dir, err.Error()))
+	}
+
+	tf.SetStdout(os.Stdout)
+	tf.SetStderr(os.Stderr)
+
+	ctx, cancel := getContext(timeout)
+	defer cancel()
+
+	destroyErr := tf.Destroy(ctx)
+	if destroyErr != nil {
+		return errors.New(fmt.Sprintf("Error with terraform destroy in directory \"%s\": %s", dir, destroyErr.Error()))
+	}
+
+	return nil
+}
+
 func operationsInsersect(a tfjson.Actions, b tfjson.Actions) bool {
 	for _, aElem := range a {
 		for _, bElem := range b {

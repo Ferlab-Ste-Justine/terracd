@@ -106,3 +106,17 @@ func Apply(dir string, conf config.Config) error {
 
 	return nil
 }
+
+func Destroy(dir string, conf config.Config) error {
+	initErr := terraform.Init(dir, conf.TerraformPath, conf.Timeouts.TerraformInit)
+	if initErr != nil {
+		return initErr
+	}
+
+	destroyErr := terraform.Destroy(dir, conf.TerraformPath, conf.Timeouts.TerraformDestroy)
+	if destroyErr != nil {
+		return destroyErr
+	}
+
+	return nil
+}
