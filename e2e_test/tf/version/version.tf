@@ -1,5 +1,9 @@
-resource "local_file" "other_file" {
-  content         = "A"
-  file_permission = "0660"
-  filename        = "output/other_file"
+terraform {
+  required_version = ">= 1.0.0"
+  required_providers {
+    local = {
+      source  = "hashicorp/local"
+      version = "= 2.4.0"
+    }
+  }
 }
