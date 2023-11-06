@@ -1,4 +1,4 @@
-FROM golang:1.18-bullseye as builder
+FROM golang:1.20-bullseye as builder
 
 ENV CGO_ENABLED=0
 
@@ -7,7 +7,7 @@ COPY . .
 
 RUN go build .
 
-FROM hashicorp/terraform:1.2.8
+FROM hashicorp/terraform:1.4.6
 
 ENV WORKING_DIR="/opt"
 
