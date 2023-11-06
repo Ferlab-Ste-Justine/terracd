@@ -260,3 +260,9 @@ I'll get the following runtime error with terracd:
 ```
 Aborting as forbidden operation is about to be performed on protected resource "module.filemon.local_file.file"
 ```
+
+# Running End to End Tests
+
+You can run end to end tests locally by running `go test` at the root of the project.
+
+If you want to emulate the end to end test pipeline instead, you can type: `./e2e_test/docker-runtime/test.sh`. Note that you will need to have docker installed locally to run the test as they run in the pipeline.
