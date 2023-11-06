@@ -34,77 +34,50 @@ func MigrateBackend(dir string, conf config.Config) error {
 	return nil
 }
 
-func Plan(dir string, conf config.Config) error {
+func Plan(dir string, conf config.Config) (bool, error) {
 	planName := "terracd-plan"
 	forbiddenOpsFsPattern := "*.terracd-fo.yml"
 
 	initErr := terraform.Init(dir, conf.TerraformPath, conf.Timeouts.TerraformInit)
 	if initErr != nil {
-		return initErr
+		return false, initErr
 	}
 
 	changes, planErr := terraform.Plan(dir, planName, conf.TerraformPath, conf.Timeouts.TerraformPlan)
 	if planErr != nil {
-		return planErr
+		return false, planErr
 	}
 
-	if changes {
-		forbiddenOpsFiles, foFilesErr := fs.FindFiles(dir, forbiddenOpsFsPattern)
-		if foFilesErr != nil {
-			return foFilesErr
-		}
-
-		forbiddenOps, foErr := terraform.GetForbiddenOperations(forbiddenOpsFiles)
-		if foErr != nil {
-			return foErr
-		}
-
-		checkErr := terraform.CheckPlan(dir, planName, conf.TerraformPath, forbiddenOps)
-		if checkErr != nil {
-			return checkErr
-		}
+	if !changes {
+		return false, nil
 	}
 
-	return nil
+	forbiddenOpsFiles, foFilesErr := fs.FindFiles(dir, forbiddenOpsFsPattern)
+	if foFilesErr != nil {
+		return true, foFilesErr
+	}
+
+	forbiddenOps, foErr := terraform.GetForbiddenOperations(forbiddenOpsFiles)
+	if foErr != nil {
+		return true, foErr
+	}
+
+	return true, terraform.CheckPlan(dir, planName, conf.TerraformPath, forbiddenOps)
 }
 
-func Apply(dir string, conf config.Config) error {
+func Apply(dir string, conf config.Config) (bool, error) {
 	planName := "terracd-plan"
-	forbiddenOpsFsPattern := "*.terracd-fo.yml"
 
-	initErr := terraform.Init(dir, conf.TerraformPath, conf.Timeouts.TerraformInit)
-	if initErr != nil {
-		return initErr
-	}
-
-	changes, planErr := terraform.Plan(dir, planName, conf.TerraformPath, conf.Timeouts.TerraformPlan)
+	changes, planErr := Plan(dir, conf)
 	if planErr != nil {
-		return planErr
+		return changes, planErr
 	}
 
-	if changes {
-		forbiddenOpsFiles, foFilesErr := fs.FindFiles(dir, forbiddenOpsFsPattern)
-		if foFilesErr != nil {
-			return foFilesErr
-		}
-
-		forbiddenOps, foErr := terraform.GetForbiddenOperations(forbiddenOpsFiles)
-		if foErr != nil {
-			return foErr
-		}
-
-		checkErr := terraform.CheckPlan(dir, planName, conf.TerraformPath, forbiddenOps)
-		if checkErr != nil {
-			return checkErr
-		}
-
-		applyErr := terraform.Apply(dir, planName, conf.TerraformPath, conf.Timeouts.TerraformApply)
-		if applyErr != nil {
-			return applyErr
-		}
+	if !changes {
+		return false, nil
 	}
 
-	return nil
+	return true, terraform.Apply(dir, planName, conf.TerraformPath, conf.Timeouts.TerraformApply)
 }
 
 func Destroy(dir string, conf config.Config) error {

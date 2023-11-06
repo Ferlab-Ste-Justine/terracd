@@ -241,14 +241,17 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 		}
 		time.Sleep(waitTime)
 	case "plan":
-		planErr := Plan(paths.Work, conf)
+		_, planErr := Plan(paths.Work, conf)
 		if planErr != nil {
 			return st, false, planErr
 		}
 	case "apply":
-		applyErr := Apply(paths.Work, conf)
+		applied, applyErr := Apply(paths.Work, conf)
 		if applyErr != nil {
 			return st, false, applyErr
+		}
+		if !applied {
+			fmt.Println("Info: Plan indicated no operations. Skipped apply.")
 		}
 	case "destroy":
 		destroyErr := Destroy(paths.Work, conf)
