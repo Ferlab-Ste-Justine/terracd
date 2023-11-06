@@ -22,14 +22,15 @@ The file has the following top-level fields:
 - **cache**: Allows the caching of terraform providers (currently only supported on the filesystem of stable runtime environments) between executions of terracd. Note that it is dependent on a state store.
 - **metrics**: Specify configuration to push timestamp metric on a prometheus pushgateway. Note that since only a stateless timestamp metric is currently exported, a state store is **not** necessary to use this feature.
 - **sources**: Array of terraform file sources to be merged together and applied on
-- **command**: Command to execute. Can be **apply** to run **terraform apply**, **plan** to run **terraform plan**, **migrate_backend** to migrate the terraform state to another backend file or **wait** to simply assemble all the sources together and wait a given duration before exiting (useful for importing resources). Defaults to **apply** if omitted.
+- **command**: Command to execute. Can be **apply** to run **terraform apply**, **plan** to run **terraform plan**, **destroy** to run **terraform destroy**, **migrate_backend** to migrate the terraform state to another backend file or **wait** to simply assemble all the sources together and wait a given duration before exiting (useful for importing resources). Defaults to **apply** if omitted.
 - **backend_migration**: Parameters specifying the backend files to rotate when migrating your backend.
 - **termination_hooks**: Logic to call when the terraform command is done
 
 The **timeouts** entry has the following fields (each taking the duration string format, see: https://pkg.go.dev/time#ParseDuration):
   - **terraform_init**: Execution timeout for the **terraform init** operation.
-  - **terraform_plan**: Execution timeout for the **terraform_plan** operation.
-  - **terraform_apply**: Execution timeout for the **terraform_apply** operation.
+  - **terraform_plan**: Execution timeout for the **terraform plan** operation.
+  - **terraform_apply**: Execution timeout for the **terraform apply** operation.
+  - **terraform_destroy**: Execution timeout for the **terraform destroy** operation.
   - **wait**: Execution timeout for the **wait** command.
 
 Note that the default behavior is not to apply any timeouts for fields that are omitted.
@@ -100,9 +101,10 @@ The **backend_migration** parameter takes the following fields:
   - **next_backend**: Absolute file name of the next backend to migrate to. It is assumed to be an absolute path not present in the working directory.
 
 The **termination_hooks** parameter takes the following fields:
-  - **always**: Always call a hook. If defined, it will always override the success/failure hooks.
+  - **always**: Always call a hook. If defined, it will always override the success/failure/skip hooks.
   - **success**: Hook to call when the terraform command succeeds.
   - **failure**: Hook to call when the terraform command fails.
+  - **skip**: Hook to call when the terraform command is skipped due to the recurrence rule.
 
 Each termination hook has the following fields:
   - **command**: Defines a command to run with its arguments
@@ -125,6 +127,7 @@ timeouts:
   terraform_init: "15m"
   terraform_plan: "15m"
   terraform_apply: "1h"
+  terraform_destroy: "1h"
 sources:
   - repo:
       url: "git@github.com:mygituser/terracd-test.git"
@@ -158,6 +161,7 @@ timeouts:
   terraform_init: "15m"
   terraform_plan: "15m"
   terraform_apply: "1h"
+  terraform_destroy: "1h"
 backend_migration:
   current_backend: "backend.tf"
   next_backend: "/home/myuser/nextbackenddir/backend.tf"
