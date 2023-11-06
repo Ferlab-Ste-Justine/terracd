@@ -1,6 +1,6 @@
 module github.com/Ferlab-Ste-Justine/terracd
 
-go 1.18
+go 1.20
 
 require (
 	github.com/Ferlab-Ste-Justine/etcd-sdk v0.8.0
