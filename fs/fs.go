@@ -73,6 +73,19 @@ func PathExists(path string) (bool, error) {
 	return true, nil
 }
 
+func EnsureDirectoryNotExits(dPath string) error {
+	dExists, dExistsErr := PathExists(dPath)
+	if dExistsErr != nil {
+		return dExistsErr
+	}
+
+	if !dExists {
+		return nil
+	}
+
+	return os.RemoveAll(dPath)
+}
+
 func EnsureFileNotExists(fPath string) error {
 	fExists, fExistsErr := PathExists(fPath)
 	if fExistsErr != nil {

@@ -2,6 +2,8 @@ package state
 
 import (
 	"errors"
+
+	"github.com/Ferlab-Ste-Justine/terracd/s3"
 )
 
 type StateStore interface {
@@ -14,6 +16,7 @@ type StateStore interface {
 type StateStoreConfig struct {
 	Fs   FsConfig
 	Etcd EtcdConfig
+	S3   s3.S3ClientConfig
 }
 
 func (conf *StateStoreConfig) IsDefined() bool {

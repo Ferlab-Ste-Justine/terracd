@@ -30,6 +30,7 @@ type EtcdStateStore struct {
 	Config EtcdConfig
 	client *client.EtcdClient
 }
+
 func (store *EtcdStateStore) Initialize() error {
 	passErr := store.Config.Auth.ResolvePassword()
 	if passErr != nil {
