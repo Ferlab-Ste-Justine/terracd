@@ -215,3 +215,54 @@ func FindFiles(src string, pattern string) ([]string, error) {
 
 	return matches, err
 }
+
+type DirInfo struct {
+	Dir string
+	Files map[string]fs.FileInfo
+}
+
+func GetDirInfo(dir string) (DirInfo, error) {
+	info := DirInfo{
+		Dir: dir,
+		Files: make(map[string]fs.FileInfo),
+	}
+
+	files, filesErr := FindFiles(dir, "*")
+	if filesErr != nil {
+		return info, filesErr
+	}
+
+	for _, file := range files {
+		fInfo, fInfoErr := os.Lstat(file)
+		if fInfoErr != nil {
+			return info, filesErr
+		}
+
+		info.Files[file] = fInfo
+	}
+
+	return info, nil
+}
+
+func (info *DirInfo) Differs(other *DirInfo) bool {
+	for file, fInfo := range other.Files {
+		if cfInfo, ok := info.Files[file]; ok {
+			if cfInfo.Size() != fInfo.Size() {
+				return true
+			}
+		} else {
+			return true
+		}
+	}
+
+	for file, _ := range info.Files {
+		if _, ok := other.Files[file]; !ok {
+			return true
+		}
+	}
+
+	return false
+}
+
+
+
