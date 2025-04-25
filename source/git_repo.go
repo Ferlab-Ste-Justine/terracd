@@ -22,6 +22,7 @@ type CommitHash struct {
 type GitRepoAuth struct {
 	SshKeyPath     string `yaml:"ssh_key_path"`
 	KnownHostsPath string `yaml:"known_hosts_path"`
+	User           string
 }
 
 type GitRepo struct {
@@ -67,7 +68,7 @@ func (repo *GitRepo) Sync(dir string) (CommitHash, error) {
 		}
 	}
 
-	sshCreds, sshCredsErr := git.GetSshCredentials(repo.Auth.SshKeyPath, repo.Auth.KnownHostsPath)
+	sshCreds, sshCredsErr := git.GetSshCredentials(repo.Auth.SshKeyPath, repo.Auth.KnownHostsPath, repo.Auth.User)
 	if sshCredsErr != nil {
 		return CommitHash{}, sshCredsErr
 	}

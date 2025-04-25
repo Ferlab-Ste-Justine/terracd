@@ -60,6 +60,7 @@ Each **sources** entry can take one of the following 3 forms:
     auth:
       ssh_key_path: "<ssh key that has read access to the repo>"
       known_hosts_path: "<known host file containing the expect fingerprint of git server>"
+      user: "<user to ssh as. Can often be omitted, but some git server implementations require it>"
     gpg_public_keys_paths: <Optional list of armored keyrings to validate signature of latest commit>
 - backend_http:
     filename: "<File name to give the generated backend file>"
