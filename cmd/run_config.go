@@ -6,7 +6,6 @@ import (
 	"path"
 	"time"
 
-	"github.com/Ferlab-Ste-Justine/terracd/cache"
 	"github.com/Ferlab-Ste-Justine/terracd/config"
 	"github.com/Ferlab-Ste-Justine/terracd/fs"
 	"github.com/Ferlab-Ste-Justine/terracd/jitter"
@@ -14,7 +13,7 @@ import (
 	"github.com/Ferlab-Ste-Justine/terracd/state"
 )
 
-func backupState(workDir string, stateDir string) error {
+func backupFsState(workDir string, stateDir string) error {
 	stateSrc := path.Join(workDir, "terraform.tfstate")
 	stateDest := path.Join(stateDir, "terraform.tfstate")
 	stateBackSrc := path.Join(workDir, "terraform.tfstate.backup")
@@ -47,65 +46,10 @@ func backupState(workDir string, stateDir string) error {
 	return nil
 }
 
-func cacheProviders(workDir string, cacheDir string) error {
-	lockFileSrc := path.Join(workDir, ".terraform.lock.hcl")
-	lockFileDest := path.Join(cacheDir, ".terraform.lock.hcl")
-	providerDirSrc := path.Join(workDir, ".terraform", "providers")
-	providerDirDest := path.Join(cacheDir, ".terraform", "providers")
-
-	lockFileSrcExists, lockFileSrcErr := fs.PathExists(lockFileSrc)
-	if lockFileSrcErr != nil {
-		return lockFileSrcErr
-	}
-
-	providerDirSrcExists, providerDirSrcErr := fs.PathExists(providerDirSrc)
-	if providerDirSrcErr != nil {
-		return providerDirSrcErr
-	}
-
-	providerDirDestExists, providerDirDestErr := fs.PathExists(providerDirDest)
-	if providerDirDestErr != nil {
-		return providerDirDestErr
-	}
-
-	if lockFileSrcExists && providerDirSrcExists {
-		if providerDirDestExists {
-			remErr := os.RemoveAll(providerDirDest)
-			if remErr != nil {
-				return remErr
-			}
-		}
-		
-		copyErr := fs.CopyPrivateFile(lockFileSrc, lockFileDest)
-		if copyErr != nil {
-			return copyErr
-		}
-
-		ensErr := fs.AssurePrivateDir(providerDirDest)
-		if ensErr != nil {
-			return ensErr
-		}
-
-		copyErr = fs.CopyDir(providerDirDest, providerDirSrc)
-		if copyErr != nil {
-			return copyErr
-		}
-	}
-
-	return nil
-}
-
-func cleanup(workDir string, stateDir string, cacheDir string, cache bool) error {
-	backupErr := backupState(workDir, stateDir)
+func cleanup(workDir string, stateDir string) error {
+	backupErr := backupFsState(workDir, stateDir)
 	if backupErr != nil {
 		return backupErr
-	}
-
-	if cache {
-		cacheErr := cacheProviders(workDir, cacheDir)
-		if cacheErr != nil {
-			return cacheErr
-		}
 	}
 
 	return os.RemoveAll(workDir)
@@ -131,7 +75,7 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 	}
 	if workDirExists {
 		fmt.Println("Warning: Working directory found from prior iteration. Will clean it up.")
-		cleanupErr := cleanup(paths.Work, paths.State, paths.Cache, false)
+		cleanupErr := cleanup(paths.Work, paths.State)
 		if cleanupErr != nil {
 			return st, false, cleanupErr
 		}
@@ -162,8 +106,8 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 		return st, false, assureErr
 	}
 
-	defer func() {
-		cleanupErr := cleanup(paths.Work, paths.State, paths.Cache, conf.Cache.IsDefined() && conf.Command != "wait")
+	defer func() {		
+		cleanupErr := cleanup(paths.Work, paths.State)
 		if cleanupErr != nil {
 			fmt.Printf("Warning: Failed to cleanup working directory at the end of execution: %s.\n", cleanupErr.Error())
 		}
@@ -193,21 +137,19 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 		return st, false, mergeErr
 	}
 
-	var cacheInfo cache.CacheInfo
-	var cacheInfoErr error
-	if conf.Cache.IsDefined() {
-		cacheInfo, cacheInfoErr = cache.GetCacheInfo(paths.Work, conf.Cache)
-		if cacheInfoErr != nil {
-			return st, false, cacheInfoErr
-		}
-	
-		if cacheInfo.ShouldUse(&st.CacheInfo) {
-			mergeErr := fs.MergeDirs(paths.Work, []string{paths.Cache})
-			if mergeErr != nil {
-				return st, false, mergeErr
+	cacheInfo, cacheDirInfo, cacheInfoErr := conf.Cache.Load(paths.Work, paths.Cache, st.CacheInfo)
+	if cacheInfoErr != nil {
+		return st, false, cacheInfoErr
+	}
+
+	defer func() {
+		if conf.Command != "wait" {
+			saveCacheErr := conf.Cache.Save(paths.Work, paths.Cache, cacheDirInfo)
+			if saveCacheErr != nil {
+				fmt.Printf("Warning: Failed to backup cache: %s.\n", saveCacheErr.Error())
 			}
 		}
-	}
+	}()
 
 	if conf.RandomJitter > 0 {
 		jitter.Seed()
