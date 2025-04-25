@@ -221,6 +221,13 @@ type DirInfo struct {
 	Files map[string]fs.FileInfo
 }
 
+func GetEmptyDirInfo(dir string) DirInfo {
+	return DirInfo{
+		Dir: dir,
+		Files: make(map[string]fs.FileInfo),
+	}
+}
+
 func GetDirInfo(dir string) (DirInfo, error) {
 	info := DirInfo{
 		Dir: dir,
