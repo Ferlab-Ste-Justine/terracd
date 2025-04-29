@@ -80,7 +80,7 @@ func (store *EtcdStateStore) Write(state State) error {
 		return errors.New(fmt.Sprintf("Error serializing the state info: %s", err.Error()))
 	}
 
-	_, err = store.client.PutKey(fmt.Sprintf("%s%s", store.Config.Prefix, "recurrence.yml"), string(output))
+	_, err = store.client.PutKey(fmt.Sprintf("%s%s", store.Config.Prefix, "state.yml"), string(output))
 	if err != nil {
 		return errors.New(fmt.Sprintf("Error writing the state file: %s", err.Error()))
 	}

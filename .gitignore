@@ -1,2 +1,8 @@
 info.txt
 terracd
+e2e_test/*-dependencies/.terraform
+e2e_test/*-dependencies/.terraform.lock.hcl
+e2e_test/*-dependencies/terraform.tfstate
+e2e_test/*-dependencies/terraform.tfstate.backup
+e2e_test/*-dependencies/keys/
+e2e_test/*-dependencies/certs/

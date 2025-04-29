@@ -18,11 +18,16 @@ type TestConfTemplateSrc struct {
 	Dir string
 }
 
+type TestConfTemplateState struct {
+	Type string
+}
+
 type TestConfTemplate struct {
 	TerraformPath string
 	Command       string
 	MinInterval   string
 	Jitter        string
+	State         TestConfTemplateState
 	Sources       []TestConfTemplateSrc
 }
 
