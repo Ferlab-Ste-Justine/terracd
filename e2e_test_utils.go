@@ -11,11 +11,19 @@ import (
 	"text/template"
 	"time"
 
+	git "github.com/Ferlab-Ste-Justine/git-sdk"
+
 	"github.com/Ferlab-Ste-Justine/terracd/fs"
 )
 
-type TestConfTemplateSrc struct {
+type TestConfTemplateDirSrc struct {
 	Dir string
+}
+
+type TestConfTemplateGitSrc struct {
+	Url string
+	User string
+	KnownHost string
 }
 
 type TestConfTemplateState struct {
@@ -28,7 +36,8 @@ type TestConfTemplate struct {
 	MinInterval   string
 	Jitter        string
 	State         TestConfTemplateState
-	Sources       []TestConfTemplateSrc
+	DirSources    []TestConfTemplateDirSrc
+	GitSources    []TestConfTemplateGitSrc
 }
 
 func (tpl *TestConfTemplate) SetTfPath() error {
@@ -171,4 +180,42 @@ func FileHasValue(filePath string, value string) (bool, error) {
 	}
 
 	return string(fContent) == value, nil
+}
+
+func setRepoLocalFileContent(content string, fsPath string, repoUrl string, sshCreds *git.SshCredentials, user string) error {
+	oneMinute, _ := time.ParseDuration("1m")
+	return git.PushChanges(func() (*git.GitRepository, error) {
+		repo, _, syncErr := git.SyncGitRepo(fsPath, repoUrl, "main", sshCreds)
+		if syncErr != nil {
+			return nil, syncErr
+		}
+
+		hclBit := `
+		resource "local_file" "git_file" {
+		content         = file("${path.module}/git_file_content.txt")
+		file_permission = "0660"
+		filename        = "${path.module}/../output/git_file"
+		}
+		`
+	
+		writeErr := os.WriteFile(path.Join(fsPath, "git_file.tf"), []byte(hclBit), 0644)
+		if writeErr != nil {
+			return nil, writeErr
+		}
+	
+		writeErr = os.WriteFile(path.Join(fsPath, "git_file_content.txt"), []byte(content), 0644)
+		if writeErr != nil {
+			return nil, writeErr
+		}
+
+		_, commitErr := git.CommitFiles(repo, []string{"git_file.tf", "git_file_content.txt"}, "Some changes", git.CommitOptions{
+			Name: user,
+			Email: "test@test.test",
+		})
+		if commitErr != nil {
+			return repo, commitErr
+		}
+
+		return repo, nil
+	}, "main", sshCreds, 3, oneMinute)
 }

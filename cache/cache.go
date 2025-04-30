@@ -128,13 +128,15 @@ func (conf *CacheConfig) Save(workDir string, cacheDir string, prevCacheInfo fs.
 		return cacheErr
 	}
 
-	dirInfo, dirInfoErr := fs.GetDirInfo(cacheDir)
-	if dirInfoErr != nil {
-		return dirInfoErr
-	}
+	if conf.S3.IsDefined() {
+		dirInfo, dirInfoErr := fs.GetDirInfo(cacheDir)
+		if dirInfoErr != nil {
+			return dirInfoErr
+		}
 
-	if prevCacheInfo.Differs(&dirInfo) {
-		return s3.SyncFromFs(conf.S3, cacheDir)
+		if prevCacheInfo.Differs(&dirInfo) {
+			return s3.SyncFromFs(conf.S3, cacheDir)
+		}
 	}
 
 	return nil

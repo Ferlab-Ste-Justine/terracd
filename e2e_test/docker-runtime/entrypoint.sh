@@ -15,8 +15,15 @@ tar xzvf /tmp/etcd.tar.gz -C /tmp/etcd
 mv /tmp/etcd/etcd-v3.5.8-linux-amd64/etcd /usr/local/bin/etcd
 rm /tmp/etcd.tar.gz
 
-cd /opt/code
+#Setup Gitea
+curl -L https://github.com/go-gitea/gitea/releases/download/v1.23.6/gitea-1.23.6-linux-amd64 -o /tmp/gitea
+chmod +x /tmp/gitea
+cp /tmp/gitea /usr/local/bin/gitea
 
-(cd e2e_test/etcd-dependencies; terraform init; terraform apply -auto-approve)
-
-go test
+if [ -n "$EXEC_ID" ]; then
+    groupadd -g $EXEC_ID testuser
+    useradd testuser -u $EXEC_ID -g $EXEC_ID -m -s /bin/bash
+    su testuser /opt/entrypoint_run_tests.sh
+else
+    /opt/entrypoint_run_tests.sh
+fi
