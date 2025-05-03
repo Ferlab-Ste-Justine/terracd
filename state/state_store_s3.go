@@ -19,7 +19,7 @@ type S3StateStore struct {
 }
 
 func (store *S3StateStore) Initialize() error {
-	return nil
+	return store.Config.Auth.GetKeyAuth()
 }
 
 func (store *S3StateStore) Read() (State, error) {
@@ -28,6 +28,15 @@ func (store *S3StateStore) Read() (State, error) {
 	conn, connErr := s3.Connect(store.Config)
 	if connErr != nil {
 		return st, connErr
+	}
+
+	exists, existsErr := s3.KeyExists(store.Config.Bucket, path.Join(store.Config.Path, "state.yml"), conn)
+	if existsErr != nil {
+		return st, existsErr
+	}
+
+	if !exists {
+		return st, nil
 	}
 
 	objRead, readErr := conn.GetObject(context.Background(), store.Config.Bucket, path.Join(store.Config.Path, "state.yml"), minio.GetObjectOptions{})

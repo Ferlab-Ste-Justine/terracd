@@ -20,7 +20,7 @@ type StateStoreConfig struct {
 }
 
 func (conf *StateStoreConfig) IsDefined() bool {
-	return conf.Fs.IsDefined() || conf.Etcd.IsDefined()
+	return conf.Fs.IsDefined() || conf.Etcd.IsDefined() || conf.S3.IsDefined()
 }
 
 func (conf *StateStoreConfig) GetStore(fsStorePath string) (StateStore, error) {
@@ -33,6 +33,8 @@ func (conf *StateStoreConfig) GetStore(fsStorePath string) (StateStore, error) {
 		}, nil
 	} else if conf.Etcd.IsDefined() {
 		return &EtcdStateStore{Config: conf.Etcd}, nil
+	} else if conf.S3.IsDefined() {
+		return &S3StateStore{Config: conf.S3}, nil
 	}
 
 	return &FsStateStore{}, errors.New("Tried to create a store though no valid definition was found")

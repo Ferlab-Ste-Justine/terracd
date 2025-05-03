@@ -109,5 +109,5 @@ func GetConfig() (Config, error) {
 		}
 	}
 
-	return c, nil
+	return c, c.Cache.Initialize()
 }

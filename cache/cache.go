@@ -78,6 +78,14 @@ type CacheConfig struct {
 	S3           s3.S3ClientConfig `yaml:"s3"`
 }
 
+func (conf *CacheConfig) Initialize() error {
+	if conf.IsDefined() && conf.S3.IsDefined() {
+		return conf.S3.Auth.GetKeyAuth()
+	}
+
+	return nil
+}
+
 func (conf *CacheConfig) IsDefined() bool {
 	return conf.VersionsFile != ""
 }

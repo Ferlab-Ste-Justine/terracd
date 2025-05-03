@@ -40,7 +40,6 @@ func (conf *S3AuthConfig) GetKeyAuth() error {
 }
 
 type S3ClientConfig struct {
-	ObjectsPrefix     string        `yaml:"objects_prefix"`
 	Endpoint          string
 	Bucket            string
 	Path              string
