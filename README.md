@@ -19,7 +19,7 @@ The file has the following top-level fields:
 - **random_jitter**: Golang duration format indicating a random start delay up to that duration. Useful to spread the load a little when you use a scheduler that triggers at the same time for all your jobs.
 - **state_store**: Storage strategy to store a persistent terracd state between executions. Needed to support provider caching and recurrence control.
 - **recurrence**: Allows more fine-grained control on when terracd re-executes beyond what schedulers normallly support. Note that it is dependant on a state store.
-- **cache**: Allows the caching of terraform providers (currently only supported on the filesystem of stable runtime environments) between executions of terracd. Note that it is dependent on a state store.
+- **cache**: Allows the caching of terraform providers (either on the filesystem for longer lived runtime environments or in an s3 store for more ephemeral runtime environments) between executions of terracd. Note that it is dependent on a state store.
 - **metrics**: Specify configuration to push timestamp metric on a prometheus pushgateway. Note that since only a stateless timestamp metric is currently exported, a state store is **not** necessary to use this feature.
 - **sources**: Array of terraform file sources to be merged together and applied on
 - **command**: Command to execute. Can be **apply** to run **terraform apply**, **plan** to run **terraform plan**, **destroy** to run **terraform destroy**, **migrate_backend** to migrate the terraform state to another backend file or **wait** to simply assemble all the sources together and wait a given duration before exiting (useful for importing resources). Defaults to **apply** if omitted.
@@ -49,6 +49,16 @@ The **state_store** entry has the following fields:
     - **client_cert**: Client certificate to use to authentify itself to the cluster when using mTLS.
     - **client_key**: Client private key to use to authentify itself to the cluster when using mTLS.
     - **password_auth**: Yaml file containing a **username** and **password** key to authentify against an etcd cluster using password authentication.
+- **s3**: Configuration if you want to store terracd's state in a remote **s3** store. It has the following fields:
+  - **endpoint**: Endpoint of the s3 store (ip or domain with port separation by semicolon)
+  - **bucket**: Bucket to store the state in
+  - **path**: Path to store the state under in the bucket
+  - **region**: Region to use for a multi-region s3 store
+  - **connection_timeout**: Timeout to connect to the s3 store (as a golang duration string)
+  - **request_timeout**: Timeout for requests to the s3 store (as a golang duration string)
+  - **auth**: Authentication parameters. It takes the following keys:
+    - **ca_cert**: Path to a CA cert if you s3 store uses a server certificate with a CA not installed in the system.
+    - **key_auth**: Path to a yaml file containing the credentials to authentify to the s3 store. It should contained the **access_key** and **secret_key** keys.
 
 Each **sources** entry can take one of the following 3 forms:
 ```
@@ -86,6 +96,16 @@ The **recurrence** entry takes the following fields:
 
 The **cache** entry takes the following field:
 - **versions_file**: Path to a terraform provider versions file to hash in its assembled runtime directory. If the sha256 checksum value of this file changes, the cached providers will be discarded and redownloaded.
+- **s3**: Configuration if you want to cache the terraform providers of the pipeline in s3. It has the following fields:
+  - **endpoint**: Endpoint of the s3 store (ip or domain with port separation by semicolon)
+  - **bucket**: Bucket to store the providers in
+  - **path**: Path to store the providers under in the bucket
+  - **region**: Region to use for a multi-region s3 store
+  - **connection_timeout**: Timeout to connect to the s3 store (as a golang duration string)
+  - **request_timeout**: Timeout for requests to the s3 store (as a golang duration string)
+  - **auth**: Authentication parameters. It takes the following keys:
+    - **ca_cert**: Path to a CA cert if you s3 store uses a server certificate with a CA not installed in the system.
+    - **key_auth**: Path to a yaml file containing the credentials to authentify to the s3 store. It should contained the **access_key** and **secret_key** keys.
 
 The **metrics** entry takes the following fields:
 - **job_name**: Job tag to provide to the exported metric
