@@ -10,11 +10,6 @@ import (
 	"github.com/Ferlab-Ste-Justine/terracd/auth"
 )
 
-type metrics struct {
-	cpuTemp  prometheus.Gauge
-	hdFailures *prometheus.CounterVec
-}
-
 type MetricsPushGatewayConfig struct {
 	Url  string
 	Auth auth.Auth
