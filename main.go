@@ -23,10 +23,11 @@ func MainNoExit() int {
 	paths := fs.GetPaths(conf.WorkingDirectory)
 
 	var skipped bool
+	usedProviders := []metrics.Provider{}
 	execErr := state.WrapInState(func(st state.State) (state.State, error) {
 		var newSt state.State
 		var err error
-		newSt, skipped, err = cmd.RunConfig(paths, conf, st)
+		newSt, skipped, usedProviders, err = cmd.RunConfig(paths, conf, st)
 		return newSt, err
 	}, conf.StateStore, paths)
 	
@@ -43,7 +44,7 @@ func MainNoExit() int {
 
 	now := time.Now()
 	hookErr := conf.TerminationHooks.Run(opResult)
-	metricsErr := metrics.PushMetrics(conf.Metrics, conf.Command, opResult.ToString(), now)
+	metricsErr := metrics.PushMetrics(conf.Metrics, conf.Command, opResult.ToString(), usedProviders, now)
 
 	if hookErr != nil {
 		fmt.Println(hookErr.Error())

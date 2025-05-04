@@ -16,8 +16,9 @@ type MetricsPushGatewayConfig struct {
 }
 
 type MetricsClientConfig struct {
-	JobName     string                   `yaml:"job_name"`
-	PushGateway MetricsPushGatewayConfig `yaml:"pushgateway"`
+	JobName          string                   `yaml:"job_name"`
+	IncludeProviders bool                     `yaml:"include_providers"`
+	PushGateway      MetricsPushGatewayConfig `yaml:"pushgateway"`
 }
 
 func (conf *MetricsClientConfig) IsDefined() bool {
@@ -27,7 +28,6 @@ func (conf *MetricsClientConfig) IsDefined() bool {
 type MetricsClient struct {
 	Config    MetricsClientConfig
 	pusher    *push.Pusher
-	timestamp prometheus.Gauge
 }
 
 func (cli *MetricsClient) Initialize() error {
@@ -52,22 +52,35 @@ func (cli *MetricsClient) Initialize() error {
 		)
 	}
 
-	cli.timestamp = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "terracd_timestamp_seconds",
-		Help: "Timestamp of completion for terracd command in seconds since epoch.",
-	})
-	
-	cli.pusher = cli.pusher.Collector(cli.timestamp)
-
 	return nil
 }
 
-func (cli *MetricsClient) Push(cmd string, result string, now time.Time) error {
-	cli.timestamp.Set(float64(now.Unix()))
-	return cli.pusher.Grouping("command", cmd).Grouping("result", result).Push()
+func (cli *MetricsClient) Push(cmd string, result string, providers []Provider, now time.Time) error {
+	currentTime := now.Unix()
+
+	cmdTimestamp := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "terracd_command_timestamp_seconds",
+		Help: "Timestamp of completion for terracd command in seconds since epoch.",
+		ConstLabels: prometheus.Labels{"command": cmd, "result": result},
+	})
+	cmdTimestamp.Set(float64(currentTime))
+	cli.pusher = cli.pusher.Collector(cmdTimestamp)
+
+	for _, provider := range providers {
+		providerUseTimestamp := prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "terracd_provider_use_timestamp_seconds",
+			Help: "Timestamp when terracd used a specific terraform provider in seconds since epoch.",
+			ConstLabels: prometheus.Labels{"registry": provider.Registry, "organisation": provider.Organization, "provider": provider.Name, "version": provider.Version},
+		})
+		providerUseTimestamp.Set(float64(currentTime))
+		cli.pusher = cli.pusher.Collector(providerUseTimestamp)
+	
+	} 
+	
+	return cli.pusher.Push()
 }
 
-func PushMetrics(conf MetricsClientConfig, cmd string, result string, now time.Time) error {
+func PushMetrics(conf MetricsClientConfig, cmd string, result string, providers []Provider, now time.Time) error {
 	if !conf.IsDefined() {
 		return nil
 	}
@@ -79,5 +92,5 @@ func PushMetrics(conf MetricsClientConfig, cmd string, result string, now time.T
 		return err
 	}
 
-	return cli.Push(cmd, result, now)
+	return cli.Push(cmd, result, providers, now)
 }

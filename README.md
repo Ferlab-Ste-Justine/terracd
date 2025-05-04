@@ -20,7 +20,7 @@ The file has the following top-level fields:
 - **state_store**: Storage strategy to store a persistent terracd state between executions. Needed to support provider caching and recurrence control.
 - **recurrence**: Allows more fine-grained control on when terracd re-executes beyond what schedulers normallly support. Note that it is dependant on a state store.
 - **cache**: Allows the caching of terraform providers (either on the filesystem for longer lived runtime environments or in an s3 store for more ephemeral runtime environments) between executions of terracd. Note that it is dependent on a state store.
-- **metrics**: Specify configuration to push timestamp metric on a prometheus pushgateway. Note that since only a stateless timestamp metric is currently exported, a state store is **not** necessary to use this feature.
+- **metrics**: Specify configuration to push timestamp metric on a prometheus pushgateway. Note that since only  stateless timestamp metrics are currently exported, a state store is **not** necessary to use this feature.
 - **sources**: Array of terraform file sources to be merged together and applied on
 - **command**: Command to execute. Can be **apply** to run **terraform apply**, **plan** to run **terraform plan**, **destroy** to run **terraform destroy**, **migrate_backend** to migrate the terraform state to another backend file or **wait** to simply assemble all the sources together and wait a given duration before exiting (useful for importing resources). Defaults to **apply** if omitted.
 - **backend_migration**: Parameters specifying the backend files to rotate when migrating your backend.
@@ -109,6 +109,7 @@ The **cache** entry takes the following field:
 
 The **metrics** entry takes the following fields:
 - **job_name**: Job tag to provide to the exported metric
+- **include_providers**: If set to true, timestamps corresponding to the usage of providers at specific time will be included in the metrics.
 - **pushgateway**: Parameters to communicate with the prometheus pushgateway. It takes the following fields:
   - **url**: Url of the prometheus pushgateway.
   - **auth**: mTLS or tls + password authentication parameters. It takes the following fields:
