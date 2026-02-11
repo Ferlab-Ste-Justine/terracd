@@ -7,7 +7,7 @@ COPY . .
 
 RUN go build .
 
-FROM hashicorp/terraform:1.4.6
+FROM hashicorp/terraform:1.5.7
 
 ENV WORKING_DIR="/opt"
 
