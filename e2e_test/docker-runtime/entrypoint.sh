@@ -3,7 +3,7 @@
 apt-get update && apt-get install unzip
 
 #Setup Terraform
-curl -L https://releases.hashicorp.com/terraform/1.4.6/terraform_1.4.6_linux_amd64.zip -o /tmp/terraform.zip
+curl -L https://releases.hashicorp.com/terraform/1.5.7/terraform_1.5.7_linux_amd64.zip -o /tmp/terraform.zip
 unzip /tmp/terraform.zip
 mv terraform /usr/local/bin/terraform
 rm /tmp/terraform.zip
