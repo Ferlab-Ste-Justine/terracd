@@ -76,7 +76,7 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 	}
 	if workDirExists {
 		fmt.Println("Warning: Working directory found from prior iteration. Will clean it up.")
-		cleanupErr := cleanup(paths.Work, paths.State)
+		cleanupErr := cleanup(paths.Work, paths.TfState)
 		if cleanupErr != nil {
 			return st, false, []metrics.Provider{}, cleanupErr
 		}
@@ -92,7 +92,7 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 		return st, false, []metrics.Provider{}, assureErr
 	}
 
-	assureErr = fs.AssurePrivateDir(paths.State)
+	assureErr = fs.AssurePrivateDir(paths.TfState)
 	if assureErr != nil {
 		return st, false, []metrics.Provider{}, assureErr
 	}
@@ -120,7 +120,7 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 	}()
 	
 	defer func() {		
-		cleanupErr := cleanup(paths.Work, paths.State)
+		cleanupErr := cleanup(paths.Work, paths.TfState)
 		if cleanupErr != nil {
 			fmt.Printf("Warning: Failed to cleanup working directory at the end of execution: %s.\n", cleanupErr.Error())
 		}
@@ -144,7 +144,7 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 		return st, false, []metrics.Provider{}, backendGenErr
 	}
 
-	mergeDirs := append(conf.Sources.GetFsPaths(paths.Repos), paths.State, paths.Backend)
+	mergeDirs := append(conf.Sources.GetFsPaths(paths.Repos), paths.TfState, paths.Backend)
 	mergeErr := fs.MergeDirs(paths.Work, mergeDirs)
 	if mergeErr != nil {
 		return st, false, []metrics.Provider{}, mergeErr

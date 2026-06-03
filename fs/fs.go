@@ -16,20 +16,25 @@ type Paths struct {
 	Root            string
 	Repos           string
 	Backend         string
-	State           string
+	TfState         string
 	FsStore         string
 	ProviderCache   string
 	Work            string
 }
 
-func GetPaths(rootDir string) Paths {
+func GetPaths(rootDir string, persistentPath string) Paths {
+	dataDir := persistentPath
+	if dataDir == "" {
+		dataDir = rootDir
+	}
+
 	return Paths{
 		Root: rootDir,
-		Repos: path.Join(rootDir, "repos"),
+		Repos: path.Join(dataDir, "repos"),
 		Backend: path.Join(rootDir, "backend"),
-		State: path.Join(rootDir, "state"),
-		FsStore: path.Join(rootDir, "fs-store"),
-		ProviderCache: path.Join(rootDir, "provider-cache"),
+		TfState: path.Join(dataDir, "state"),
+		FsStore: path.Join(dataDir, "fs-store"),
+		ProviderCache: path.Join(dataDir, "provider-cache"),
 		Work: path.Join(rootDir, "work"),
 	}
 }

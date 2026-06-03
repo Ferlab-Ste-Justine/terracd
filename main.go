@@ -20,7 +20,7 @@ func MainNoExit() int {
 		return 1
 	}
 
-	paths := fs.GetPaths(conf.WorkingDirectory)
+	paths := fs.GetPaths(conf.WorkingDirectory, conf.PersistentFsPath)
 
 	var skipped bool
 	usedProviders := []metrics.Provider{}
