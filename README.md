@@ -15,11 +15,12 @@ By default, terracd expects a file named **config.yml** to be present in its run
 The file has the following top-level fields:
 - **terraform_path**: Path to the terraform binary
 - **working_directory**: Directory where terracd will assemble its workspace from the various sources. Defaults to the working directory of the process if omitted.
+- **data_path**: Path where to store the terraform state, terracd state, providers filesystem cache and git repositories filesystem cache. Defaults to the **working_directory** if omitted. Useful if you mount a persistent volume in an otherwise transient filesystem or otherwise if you want to cleanly separate persistent data from the rest of the workspace.
 - **timeouts**: Execution timeouts for the various stages of the terraform lifecycle
 - **random_jitter**: Golang duration format indicating a random start delay up to that duration. Useful to spread the load a little when you use a scheduler that triggers at the same time for all your jobs.
 - **state_store**: Storage strategy to store a persistent terracd state between executions. Needed to support provider caching and recurrence control.
 - **recurrence**: Allows more fine-grained control on when terracd re-executes beyond what schedulers normallly support. Note that it is dependant on a state store.
-- **cache**: Allows the caching of terraform providers (either on the filesystem for longer lived runtime environments or in an s3 store for more ephemeral runtime environments) between executions of terracd. Note that it is dependent on a state store.
+- **cache**: Configuration related to caching of terraform providers and git repositories between executions. Note that caching for providers is dependent on a state store.
 - **metrics**: Specify configuration to push timestamp metric on a prometheus pushgateway. Note that since only  stateless timestamp metrics are currently exported, a state store is **not** necessary to use this feature.
 - **sources**: Array of terraform file sources to be merged together and applied on
 - **command**: Command to execute. Can be **apply** to run **terraform apply**, **plan** to run **terraform plan**, **destroy** to run **terraform destroy**, **migrate_backend** to migrate the terraform state to another backend file or **wait** to simply assemble all the sources together and wait a given duration before exiting (useful for importing resources). Defaults to **apply** if omitted.
@@ -95,17 +96,29 @@ The **recurrence** entry takes the following fields:
 - **git_triggers**: Boolean flag indicating whether a change in the git history of any of its git sources should also trigger a change, despite the minimum interval of time not having elapsed.
 
 The **cache** entry takes the following field:
-- **versions_file**: Path to a terraform provider versions file to hash in its assembled runtime directory. If the sha256 checksum value of this file changes, the cached providers will be discarded and redownloaded.
-- **s3**: Configuration if you want to cache the terraform providers of the pipeline in s3. It has the following fields:
-  - **endpoint**: Endpoint of the s3 store (ip or domain with port separation by semicolon)
-  - **bucket**: Bucket to store the providers in
-  - **path**: Path to store the providers under in the bucket
-  - **region**: Region to use for a multi-region s3 store
-  - **connection_timeout**: Timeout to connect to the s3 store (as a golang duration string)
-  - **request_timeout**: Timeout for requests to the s3 store (as a golang duration string)
-  - **auth**: Authentication parameters. It takes the following keys:
-    - **ca_cert**: Path to a CA cert if you s3 store uses a server certificate with a CA not installed in the system.
-    - **key_auth**: Path to a yaml file containing the credentials to authentify to the s3 store. It should contained the **access_key** and **secret_key** keys.
+- **git_sources**: Cache parameters for git repositories in the sources so that cloning the entire repository is not necessary on each execution. Note that git sources are already cached on the filesystem if it is persistent so this configuration is to store it in an external store if you run terracd on a transient filesystem.
+  -  **s3**: Configuration if you want to store the git repos in a remote **s3** store. It has the following fields:
+    - **endpoint**: Endpoint of the s3 store (ip or domain with port separation by semicolon)
+    - **bucket**: Bucket to store the git repos in
+    - **path**: Path to store the git repos under in the bucket
+    - **region**: Region to use for a multi-region s3 store
+    - **connection_timeout**: Timeout to connect to the s3 store (as a golang duration string)
+    - **request_timeout**: Timeout for requests to the s3 store (as a golang duration string)
+    - **auth**: Authentication parameters. It takes the following keys:
+      - **ca_cert**: Path to a CA cert if you s3 store uses a server certificate with a CA not installed in the system.
+      - **key_auth**: Path to a yaml file containing the credentials to authentify to the s3 store. It should contained the **access_key** and **secret_key** keys.
+- **providers**: Cache parameters for terraform providers. They can be cached on the filesystem or in an s3 store if the filesystem is transient.
+  - **versions_file**: Path to a terraform provider versions file to hash in its assembled runtime directory. If the sha256 checksum value of this file changes, the cached providers will be discarded and redownloaded.
+  - **s3**: Configuration if you want to cache the terraform providers of the pipeline in s3. It has the following fields:
+    - **endpoint**: Endpoint of the s3 store (ip or domain with port separation by semicolon)
+    - **bucket**: Bucket to store the providers in
+    - **path**: Path to store the providers under in the bucket
+    - **region**: Region to use for a multi-region s3 store
+    - **connection_timeout**: Timeout to connect to the s3 store (as a golang duration string)
+    - **request_timeout**: Timeout for requests to the s3 store (as a golang duration string)
+    - **auth**: Authentication parameters. It takes the following keys:
+      - **ca_cert**: Path to a CA cert if you s3 store uses a server certificate with a CA not installed in the system.
+      - **key_auth**: Path to a yaml file containing the credentials to authentify to the s3 store. It should contained the **access_key** and **secret_key** keys.
 
 The **metrics** entry takes the following fields:
 - **job_name**: Job tag to provide to the exported metric

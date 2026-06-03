@@ -50,7 +50,7 @@ type Config struct {
 	StateStore       state.StateStoreConfig      `yaml:"state_store"`
 	Cache            CacheConfig                  
 	Metrics          metrics.MetricsClientConfig
-	PersistentFsPath string                      `yaml:"persistent_fs_path"`
+	DataPath string                              `yaml:"data_path"`
 }
 
 func getConfigFilePath() string {

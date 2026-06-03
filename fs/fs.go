@@ -22,8 +22,8 @@ type Paths struct {
 	Work            string
 }
 
-func GetPaths(rootDir string, persistentPath string) Paths {
-	dataDir := persistentPath
+func GetPaths(rootDir string, dataPath string) Paths {
+	dataDir := dataPath
 	if dataDir == "" {
 		dataDir = rootDir
 	}
