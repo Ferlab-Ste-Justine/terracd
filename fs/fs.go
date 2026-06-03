@@ -18,8 +18,7 @@ type Paths struct {
 	Backend         string
 	State           string
 	FsStore         string
-	ProviderCache  string
-	GitSourcesCache string
+	ProviderCache   string
 	Work            string
 }
 
@@ -31,7 +30,6 @@ func GetPaths(rootDir string) Paths {
 		State: path.Join(rootDir, "state"),
 		FsStore: path.Join(rootDir, "fs-store"),
 		ProviderCache: path.Join(rootDir, "provider-cache"),
-		GitSourcesCache: path.Join(rootDir, "git-sources-cache"),
 		Work: path.Join(rootDir, "work"),
 	}
 }

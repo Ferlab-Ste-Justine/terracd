@@ -102,23 +102,18 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 		return st, false, []metrics.Provider{}, assureErr
 	}
 
-	assureErr = fs.AssurePrivateDir(paths.GitSourcesCache)
-	if assureErr != nil {
-		return st, false, []metrics.Provider{}, assureErr
-	}
-
 	assureErr = fs.AssurePrivateDir(paths.Work)
 	if assureErr != nil {
 		return st, false, []metrics.Provider{}, assureErr
 	}
 
-	gitCacheLoadErr := conf.Cache.GitSources.Load(paths.Repos, paths.GitSourcesCache)
+	gitCacheLoadErr := conf.Cache.GitSources.Load(paths.Repos)
 	if gitCacheLoadErr != nil {
 		return st, false, []metrics.Provider{}, gitCacheLoadErr
 	}
 	
 	defer func() {
-		gitCacheSaveErr := conf.Cache.GitSources.Save( paths.Repos, paths.GitSourcesCache)
+		gitCacheSaveErr := conf.Cache.GitSources.Save( paths.Repos)
 		if gitCacheSaveErr != nil {
 			fmt.Printf("Warning: Failed to cache git repositories at the end of execution: %s.\n", gitCacheSaveErr.Error())
 		}
