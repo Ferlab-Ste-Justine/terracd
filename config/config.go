@@ -115,5 +115,15 @@ func GetConfig() (Config, error) {
 		}
 	}
 
-	return c, c.Cache.Providers.Initialize()
+	providersCacheInitErr := c.Cache.Providers.Initialize()
+	if providersCacheInitErr != nil {
+		return c, providersCacheInitErr
+	}
+
+	gitSourcesCacheInitErr := c.Cache.GitSources.Initialize()
+	if gitSourcesCacheInitErr != nil {
+		return c, gitSourcesCacheInitErr
+	}
+
+	return c, nil
 }
