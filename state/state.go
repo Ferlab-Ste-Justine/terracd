@@ -10,7 +10,7 @@ import (
 
 type State struct {
 	LastCommandOccurrence recurrence.CommandOccurrence `yaml:"last_command_occurrence"`
-	CacheInfo cache.CacheInfo						   `yaml:"cache_info"`
+	CacheInfo cache.ProviderCacheInfo				   `yaml:"cache_info"`
 }
 
 type StateScopedFn func(State) (State, error)

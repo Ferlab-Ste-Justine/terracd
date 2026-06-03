@@ -32,6 +32,11 @@ type BackendMigration struct {
 	NextBackend    string `yaml:"next_backend"`
 }
 
+type CacheConfig struct {
+	Providers cache.ProviderCacheConfig
+	GitSources cache.GitSourcesCacheConfig `yaml:"git_sources"`
+}
+
 type Config struct {
 	TerraformPath    string                      `yaml:"terraform_path"`
 	Sources          source.Sources
@@ -43,7 +48,7 @@ type Config struct {
 	TerminationHooks hook.TerminationHooks       `yaml:"termination_hooks"`
 	WorkingDirectory string                      `yaml:"working_directory"`
 	StateStore       state.StateStoreConfig      `yaml:"state_store"`
-	Cache            cache.CacheConfig                  
+	Cache            CacheConfig                  
 	Metrics          metrics.MetricsClientConfig
 }
 
@@ -99,8 +104,8 @@ func GetConfig() (Config, error) {
 		return c, errors.New("If a reccurrence is defined, a state store must also be defined in order to enforce it")
 	}
 
-	if c.Cache.IsDefined() && (!c.StateStore.IsDefined()) {
-		return c, errors.New("If cache is defined, a state store must also be defined in order to manage it")
+	if c.Cache.Providers.IsDefined() && (!c.StateStore.IsDefined()) {
+		return c, errors.New("If providers cache is defined, a state store must also be defined in order to manage it")
 	}
 
 	for _, src := range c.Sources {
@@ -109,5 +114,5 @@ func GetConfig() (Config, error) {
 		}
 	}
 
-	return c, c.Cache.Initialize()
+	return c, c.Cache.Providers.Initialize()
 }

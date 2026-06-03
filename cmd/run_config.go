@@ -97,7 +97,12 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 		return st, false, []metrics.Provider{}, assureErr
 	}
 
-	assureErr = fs.AssurePrivateDir(paths.Cache)
+	assureErr = fs.AssurePrivateDir(paths.ProviderCache)
+	if assureErr != nil {
+		return st, false, []metrics.Provider{}, assureErr
+	}
+
+	assureErr = fs.AssurePrivateDir(paths.GitSourcesCache)
 	if assureErr != nil {
 		return st, false, []metrics.Provider{}, assureErr
 	}
@@ -107,6 +112,18 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 		return st, false, []metrics.Provider{}, assureErr
 	}
 
+	gitCacheLoadErr := conf.Cache.GitSources.Load(paths.Repos, paths.GitSourcesCache)
+	if gitCacheLoadErr != nil {
+		return st, false, []metrics.Provider{}, gitCacheLoadErr
+	}
+	
+	defer func() {
+		gitCacheSaveErr := conf.Cache.GitSources.Save( paths.Repos, paths.GitSourcesCache)
+		if gitCacheSaveErr != nil {
+			fmt.Printf("Warning: Failed to cache git repositories at the end of execution: %s.\n", gitCacheSaveErr.Error())
+		}
+	}()
+	
 	defer func() {		
 		cleanupErr := cleanup(paths.Work, paths.State)
 		if cleanupErr != nil {
@@ -138,14 +155,14 @@ func RunConfig(paths fs.Paths, conf config.Config, st state.State) (state.State,
 		return st, false, []metrics.Provider{}, mergeErr
 	}
 
-	cacheInfo, cacheDirInfo, cacheInfoErr := conf.Cache.Load(paths.Work, paths.Cache, st.CacheInfo)
+	cacheInfo, cacheDirInfo, cacheInfoErr := conf.Cache.Providers.Load(paths.Work, paths.ProviderCache, st.CacheInfo)
 	if cacheInfoErr != nil {
 		return st, false, []metrics.Provider{}, cacheInfoErr
 	}
 
 	defer func() {
 		if conf.Command != "wait" {
-			saveCacheErr := conf.Cache.Save(paths.Work, paths.Cache, cacheDirInfo)
+			saveCacheErr := conf.Cache.Providers.Save(paths.Work, paths.ProviderCache, cacheDirInfo)
 			if saveCacheErr != nil {
 				fmt.Printf("Warning: Failed to backup cache: %s.\n", saveCacheErr.Error())
 			}

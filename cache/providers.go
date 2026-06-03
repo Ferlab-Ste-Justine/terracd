@@ -56,29 +56,29 @@ func cacheProviders(workDir string, cacheDir string) error {
 	return nil
 }
 
-type CacheInfo struct {
+type ProviderCacheInfo struct {
 	VersionsHash string `yaml:"versions_hash"`
 }
 
-func GetCacheInfo(workDir string, conf CacheConfig) (CacheInfo, error) {
+func GetProviderCacheInfo(workDir string, conf ProviderCacheConfig) (ProviderCacheInfo, error) {
 	hash, hashErr := fs.GetFileSha256(path.Join(workDir, conf.VersionsFile))
 	if hashErr != nil {
-		return CacheInfo{}, hashErr
+		return ProviderCacheInfo{}, hashErr
 	}
 
-	return CacheInfo{hash}, nil
+	return ProviderCacheInfo{hash}, nil
 }
 
-func (info *CacheInfo) ShouldUse(otherInfo *CacheInfo) bool {
+func (info *ProviderCacheInfo) ShouldUse(otherInfo *ProviderCacheInfo) bool {
 	return info.VersionsHash == otherInfo.VersionsHash && info.VersionsHash != ""
 }
 
-type CacheConfig struct {
+type ProviderCacheConfig struct {
 	VersionsFile string            `yaml:"versions_file"`
 	S3           s3.S3ClientConfig `yaml:"s3"`
 }
 
-func (conf *CacheConfig) Initialize() error {
+func (conf *ProviderCacheConfig) Initialize() error {
 	if conf.IsDefined() && conf.S3.IsDefined() {
 		return conf.S3.Auth.GetKeyAuth()
 	}
@@ -86,20 +86,20 @@ func (conf *CacheConfig) Initialize() error {
 	return nil
 }
 
-func (conf *CacheConfig) IsDefined() bool {
+func (conf *ProviderCacheConfig) IsDefined() bool {
 	return conf.VersionsFile != ""
 }
 
-func (conf *CacheConfig) Load(workDir string, cacheDir string, stateCache CacheInfo) (CacheInfo, fs.DirInfo, error) {	
+func (conf *ProviderCacheConfig) Load(workDir string, cacheDir string, stateCache ProviderCacheInfo) (ProviderCacheInfo, fs.DirInfo, error) {	
 	if !conf.IsDefined() {
-		return CacheInfo{}, fs.DirInfo{}, nil
+		return ProviderCacheInfo{}, fs.DirInfo{}, nil
 	}
 
-	var cacheInfo CacheInfo
+	var cacheInfo ProviderCacheInfo
 	var cacheInfoErr error	
-	cacheInfo, cacheInfoErr = GetCacheInfo(workDir, *conf)
+	cacheInfo, cacheInfoErr = GetProviderCacheInfo(workDir, *conf)
 	if cacheInfoErr != nil {
-		return CacheInfo{}, fs.DirInfo{}, cacheInfoErr
+		return ProviderCacheInfo{}, fs.DirInfo{}, cacheInfoErr
 	}
 
 	if !cacheInfo.ShouldUse(&stateCache) {
@@ -126,7 +126,7 @@ func (conf *CacheConfig) Load(workDir string, cacheDir string, stateCache CacheI
 	return cacheInfo, dirInfo, nil
 }
 
-func (conf *CacheConfig) Save(workDir string, cacheDir string, prevCacheInfo fs.DirInfo) error {
+func (conf *ProviderCacheConfig) Save(workDir string, cacheDir string, prevCacheInfo fs.DirInfo) error {
 	if !conf.IsDefined() {
 		return nil
 	}

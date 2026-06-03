@@ -13,13 +13,14 @@ import (
 )
 
 type Paths struct {
-	Root    string
-	Repos   string
-	Backend string
-	State   string
-	FsStore string
-	Cache   string
-	Work    string
+	Root            string
+	Repos           string
+	Backend         string
+	State           string
+	FsStore         string
+	ProviderCache  string
+	GitSourcesCache string
+	Work            string
 }
 
 func GetPaths(rootDir string) Paths {
@@ -29,7 +30,8 @@ func GetPaths(rootDir string) Paths {
 		Backend: path.Join(rootDir, "backend"),
 		State: path.Join(rootDir, "state"),
 		FsStore: path.Join(rootDir, "fs-store"),
-		Cache: path.Join(rootDir, "cache"),
+		ProviderCache: path.Join(rootDir, "provider-cache"),
+		GitSourcesCache: path.Join(rootDir, "git-sources-cache"),
 		Work: path.Join(rootDir, "work"),
 	}
 }
@@ -115,6 +117,31 @@ func CopyPrivateFile(src string, dest string) error {
 	}
 
 	return nil
+}
+
+func EnsureEmptyDir(targetDir string) error {
+	entries, err := os.ReadDir(targetDir)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		entryPath := filepath.Join(targetDir, entry.Name())
+		if err := os.RemoveAll(entryPath); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func SyncDir(destDir string, sourceDir string) error {
+	ensureEmptyErr := EnsureEmptyDir(destDir)
+	if ensureEmptyErr != nil {
+		return ensureEmptyErr
+	}
+
+	return CopyDir(destDir, sourceDir)
 }
 
 func CopyDir(destDir string, sourceDir string) error {
