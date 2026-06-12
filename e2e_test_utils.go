@@ -182,10 +182,10 @@ func FileHasValue(filePath string, value string) (bool, error) {
 	return string(fContent) == value, nil
 }
 
-func setRepoLocalFileContent(content string, fsPath string, repoUrl string, sshCreds *git.SshCredentials, user string) error {
+func setRepoLocalFileContent(content string, fsPath string, repoUrl string, gitCreds *git.GitCredentials, user string) error {
 	oneMinute, _ := time.ParseDuration("1m")
 	return git.PushChanges(func() (*git.GitRepository, error) {
-		repo, _, syncErr := git.SyncGitRepo(fsPath, repoUrl, "main", sshCreds)
+		repo, _, syncErr := git.SyncGitRepo(fsPath, repoUrl, "main", gitCreds)
 		if syncErr != nil {
 			return nil, syncErr
 		}
@@ -217,5 +217,5 @@ func setRepoLocalFileContent(content string, fsPath string, repoUrl string, sshC
 		}
 
 		return repo, nil
-	}, "main", sshCreds, 3, oneMinute)
+	}, "main", gitCreds, 3, oneMinute)
 }

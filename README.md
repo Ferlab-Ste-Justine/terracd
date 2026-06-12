@@ -69,9 +69,12 @@ Each **sources** entry can take one of the following 3 forms:
     ref: "<git repo branch>"
     path: "<path in git repo where scripts are>"
     auth:
-      ssh_key_path: "<ssh key that has read access to the repo>"
-      known_hosts_path: "<known host file containing the expect fingerprint of git server>"
-      user: "<user to ssh as. Can often be omitted, but some git server implementations require it>"
+      ssh:
+        ssh_key_path: "<ssh key that has read access to the repo>"
+        known_hosts_path: "<known host file containing the expect fingerprint of git server>"
+        user: "<user to ssh as. Can often be omitted, but some git server implementations require it>"
+      https:
+        basic_auth_path: "<Path to yaml file containing 'username' and 'password' entries for basic auth authentication via https>"
     gpg_public_keys_paths: <Optional list of armored keyrings to validate signature of latest commit>
 - backend_http:
     filename: "<File name to give the generated backend file>"

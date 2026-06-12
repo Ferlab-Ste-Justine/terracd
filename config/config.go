@@ -3,12 +3,13 @@ package config
 import (
 	"errors"
 	"fmt"
-	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
 
+	yaml "gopkg.in/yaml.v2"
+	
 	"github.com/Ferlab-Ste-Justine/terracd/hook"
 	"github.com/Ferlab-Ste-Justine/terracd/metrics"
 	"github.com/Ferlab-Ste-Justine/terracd/cache"

@@ -4,9 +4,11 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 
+	yaml "gopkg.in/yaml.v2"
 	git "github.com/Ferlab-Ste-Justine/git-sdk"
 
 	"github.com/Ferlab-Ste-Justine/terracd/fs"
@@ -19,10 +21,52 @@ type CommitHash struct {
 	Hash string 
 }
 
-type GitRepoAuth struct {
+type GitRepoAuthSsh struct {
 	SshKeyPath     string `yaml:"ssh_key_path"`
 	KnownHostsPath string `yaml:"known_hosts_path"`
-	User           string
+	User  string
+}
+
+func (auth *GitRepoAuthSsh) IsDefined() bool {
+	return auth.SshKeyPath != ""
+}
+
+type BasicAuth struct {
+	Username string
+	Password string
+}
+
+type GitRepoAuthHttps struct {
+	BasicAuthPath string `yaml:"basic_auth_path"`
+}
+
+func (auth *GitRepoAuthHttps) IsDefined() bool {
+	return auth.BasicAuthPath != ""
+}
+
+func (auth *GitRepoAuthHttps) GetBasicAuth() (BasicAuth, error) {
+	var bAuth BasicAuth
+
+	b, err := ioutil.ReadFile(auth.BasicAuthPath)
+	if err != nil {
+		return bAuth, errors.New(fmt.Sprintf("Error reading the basic auth file: %s", err.Error()))
+	}
+	
+	err = yaml.Unmarshal(b, &bAuth)
+	if err != nil {
+		return bAuth, errors.New(fmt.Sprintf("Error parsing the basic auth file: %s", err.Error()))
+	}
+
+	return bAuth, nil
+}
+
+type GitRepoAuth struct {
+	Ssh   GitRepoAuthSsh
+	Https GitRepoAuthHttps
+}
+
+func (auth *GitRepoAuth) IsDefined() bool {
+	return auth.Ssh.IsDefined() || auth.Https.IsDefined()
 }
 
 type GitRepo struct {
@@ -68,12 +112,25 @@ func (repo *GitRepo) Sync(dir string) (CommitHash, error) {
 		}
 	}
 
-	sshCreds, sshCredsErr := git.GetSshCredentials(repo.Auth.SshKeyPath, repo.Auth.KnownHostsPath, repo.Auth.User)
-	if sshCredsErr != nil {
-		return CommitHash{}, sshCredsErr
+	var gitCreds *git.GitCredentials
+	var gitCredsErr error
+	if repo.Auth.IsDefined() {
+		if repo.Auth.Ssh.IsDefined() {
+			gitCreds, gitCredsErr = git.GetSshCredentials(repo.Auth.Ssh.SshKeyPath, repo.Auth.Ssh.KnownHostsPath, repo.Auth.Ssh.User)
+			if gitCredsErr != nil {
+				return CommitHash{}, gitCredsErr
+			}
+		} else {
+			basicAuth, basicAuthErr := repo.Auth.Https.GetBasicAuth()
+			if basicAuthErr != nil {
+				return CommitHash{}, basicAuthErr
+			}
+
+			gitCreds = git.GetHttpsCredentials(basicAuth.Username, basicAuth.Password)
+		}
 	}
 
-	gogitRepo, badRepoDir, syncErr := git.SyncGitRepo(repoDir, repo.Url, repo.Ref, sshCreds)
+	gogitRepo, badRepoDir, syncErr := git.SyncGitRepo(repoDir, repo.Url, repo.Ref, gitCreds)
 	if syncErr != nil {
 		if !badRepoDir {
 			return CommitHash{}, errors.New(fmt.Sprintf("Error updating branch \"%s\" of repo \"%s\": %s", repo.Ref, repo.Url, syncErr.Error()))

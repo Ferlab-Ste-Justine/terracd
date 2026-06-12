@@ -10,9 +10,10 @@ sources:
       url: "{{.Url}}"
       ref: main
       auth:
-        ssh_key_path: "e2e_test/git-dependencies/keys/ssh/id_rsa"
-        known_hosts_path: "{{.KnownHost}}"
-        user: "{{.User}}"
+        ssh:
+          ssh_key_path: "e2e_test/git-dependencies/keys/ssh/id_rsa"
+          known_hosts_path: "{{.KnownHost}}"
+          user: "{{.User}}"
 {{- end}}
 state_store:
 {{- if eq .State.Type "Fs" }}
