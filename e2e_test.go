@@ -30,19 +30,19 @@ func TestPlanSuccessFailureSkip(t *testing.T) {
 	defer func() {
 		err := CleanupTestExecution(tpl)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Errorf("%s", err.Error())
 		}
 	}()
 
 	err := tpl.SetTfPath()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 
 	err = tpl.GenerateConfig()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 	
@@ -50,19 +50,19 @@ func TestPlanSuccessFailureSkip(t *testing.T) {
 	
 	hooks, hooksErr := GetTestHooks()
 	if hooksErr != nil {
-		t.Errorf(hooksErr.Error())
+		t.Errorf("%s", hooksErr.Error())
 		return
 	}
 
 	if hooks.Success == time.Duration(0) || hooks.Skip != time.Duration(0) || hooks.Failure != time.Duration(0) {
-		t.Errorf("Expected plan to succeed and it didn't")
+		t.Errorf("%s", "Expected plan to succeed and it didn't")
 		return
 	}
 
 	MainNoExit()
 	hooks2, hooks2Err := GetTestHooks()
 	if hooks2Err != nil {
-		t.Errorf(hooks2Err.Error())
+		t.Errorf("%s", hooks2Err.Error())
 		return
 	}
 
@@ -74,19 +74,19 @@ func TestPlanSuccessFailureSkip(t *testing.T) {
 	tpl.MinInterval = "1ms"
 	err = tpl.GenerateConfig()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 
 	MainNoExit()
 	hooks3, hooks3Err := GetTestHooks()
 	if hooks3Err != nil {
-		t.Errorf(hooks3Err.Error())
+		t.Errorf("%s", hooks3Err.Error())
 		return
 	}
 
 	if hooks3.Success == hooks2.Success || hooks3.Skip != hooks2.Skip || hooks3.Failure != time.Duration(0) {
-		t.Errorf("Expected third iteration of plan to succeed and it didn't")
+		t.Errorf("%s", "Expected third iteration of plan to succeed and it didn't")
 		return
 	}
 
@@ -96,14 +96,14 @@ func TestPlanSuccessFailureSkip(t *testing.T) {
 	}
 	err = tpl.GenerateConfig()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 
 	MainNoExit()
 	hooks4, hooks4Err := GetTestHooks()
 	if hooks4Err != nil {
-		t.Errorf(hooks4Err.Error())
+		t.Errorf("%s", hooks4Err.Error())
 		return
 	}
 
@@ -130,19 +130,19 @@ func TestApplySuccessFailureSkip(t *testing.T) {
 	defer func() {
 		err := CleanupTestExecution(tpl)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Errorf("%s", err.Error())
 		}
 	}()
 
 	err := tpl.SetTfPath()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 
 	err = tpl.GenerateConfig()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 	
@@ -150,7 +150,7 @@ func TestApplySuccessFailureSkip(t *testing.T) {
 	
 	hooks, hooksErr := GetTestHooks()
 	if hooksErr != nil {
-		t.Errorf(hooksErr.Error())
+		t.Errorf("%s", hooksErr.Error())
 		return
 	}
 
@@ -161,7 +161,7 @@ func TestApplySuccessFailureSkip(t *testing.T) {
 
 	hasVal, hasValErr := FileHasValue(path.Join("e2e_test", "runtime", "output", "file"), "A")
 	if hasValErr != nil {
-		t.Errorf(hasValErr.Error())
+		t.Errorf("%s", hasValErr.Error())
 		return
 	}
 
@@ -172,7 +172,7 @@ func TestApplySuccessFailureSkip(t *testing.T) {
 
 	hasVal, hasValErr = FileHasValue(path.Join("e2e_test", "runtime", "output", "file-other"), "O")
 	if hasValErr != nil {
-		t.Errorf(hasValErr.Error())
+		t.Errorf("%s", hasValErr.Error())
 		return
 	}
 
@@ -184,7 +184,7 @@ func TestApplySuccessFailureSkip(t *testing.T) {
 	MainNoExit()
 	hooks2, hooks2Err := GetTestHooks()
 	if hooks2Err != nil {
-		t.Errorf(hooks2Err.Error())
+		t.Errorf("%s", hooks2Err.Error())
 		return
 	}
 
@@ -201,14 +201,14 @@ func TestApplySuccessFailureSkip(t *testing.T) {
 	}
 	err = tpl.GenerateConfig()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 
 	MainNoExit()
 	hooks3, hooks3Err := GetTestHooks()
 	if hooks3Err != nil {
-		t.Errorf(hooks3Err.Error())
+		t.Errorf("%s", hooks3Err.Error())
 		return
 	}
 
@@ -219,7 +219,7 @@ func TestApplySuccessFailureSkip(t *testing.T) {
 
 	hasVal, hasValErr = FileHasValue(path.Join("e2e_test", "runtime", "output", "file"), "B")
 	if hasValErr != nil {
-		t.Errorf(hasValErr.Error())
+		t.Errorf("%s", hasValErr.Error())
 		return
 	}
 
@@ -230,7 +230,7 @@ func TestApplySuccessFailureSkip(t *testing.T) {
 
 	hasVal, hasValErr = FileHasValue(path.Join("e2e_test", "runtime", "output", "file-other"), "O")
 	if hasValErr != nil {
-		t.Errorf(hasValErr.Error())
+		t.Errorf("%s", hasValErr.Error())
 		return
 	}
 
@@ -245,14 +245,14 @@ func TestApplySuccessFailureSkip(t *testing.T) {
 	}
 	err = tpl.GenerateConfig()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 
 	MainNoExit()
 	hooks4, hooks4Err := GetTestHooks()
 	if hooks4Err != nil {
-		t.Errorf(hooks4Err.Error())
+		t.Errorf("%s", hooks4Err.Error())
 		return
 	}
 
@@ -279,19 +279,19 @@ func TestDestroySuccessFailureSkip(t *testing.T) {
 	defer func() {
 		err := CleanupTestExecution(tpl)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Errorf("%s", err.Error())
 		}
 	}()
 
 	err := tpl.SetTfPath()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 
 	err = tpl.GenerateConfig()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 	
@@ -299,7 +299,7 @@ func TestDestroySuccessFailureSkip(t *testing.T) {
 	
 	hooks, hooksErr := GetTestHooks()
 	if hooksErr != nil {
-		t.Errorf(hooksErr.Error())
+		t.Errorf("%s", hooksErr.Error())
 		return
 	}
 
@@ -310,7 +310,7 @@ func TestDestroySuccessFailureSkip(t *testing.T) {
 
 	hasVal, hasValErr := FileHasValue(path.Join("e2e_test", "runtime", "output", "file"), "A")
 	if hasValErr != nil {
-		t.Errorf(hasValErr.Error())
+		t.Errorf("%s", hasValErr.Error())
 		return
 	}
 
@@ -321,7 +321,7 @@ func TestDestroySuccessFailureSkip(t *testing.T) {
 
 	hasVal, hasValErr = FileHasValue(path.Join("e2e_test", "runtime", "output", "file-other"), "O")
 	if hasValErr != nil {
-		t.Errorf(hasValErr.Error())
+		t.Errorf("%s", hasValErr.Error())
 		return
 	}
 
@@ -334,7 +334,7 @@ func TestDestroySuccessFailureSkip(t *testing.T) {
 
 	err = tpl.GenerateConfig()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 	
@@ -342,7 +342,7 @@ func TestDestroySuccessFailureSkip(t *testing.T) {
 
 	hooks2, hooks2Err := GetTestHooks()
 	if hooks2Err != nil {
-		t.Errorf(hooks2Err.Error())
+		t.Errorf("%s", hooks2Err.Error())
 		return
 	}
 
@@ -353,7 +353,7 @@ func TestDestroySuccessFailureSkip(t *testing.T) {
 
 	exists, existsErr := fs.PathExists(path.Join("e2e_test", "runtime", "output", "file"))
 	if existsErr != nil {
-		t.Errorf(existsErr.Error())
+		t.Errorf("%s", existsErr.Error())
 		return
 	}
 
@@ -364,7 +364,7 @@ func TestDestroySuccessFailureSkip(t *testing.T) {
 
 	exists, existsErr = fs.PathExists(path.Join("e2e_test", "runtime", "output", "file-other"))
 	if existsErr != nil {
-		t.Errorf(existsErr.Error())
+		t.Errorf("%s", existsErr.Error())
 		return
 	}
 
@@ -376,7 +376,7 @@ func TestDestroySuccessFailureSkip(t *testing.T) {
 	tpl.MinInterval = "1ms"
 	err = tpl.GenerateConfig()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 	
@@ -384,7 +384,7 @@ func TestDestroySuccessFailureSkip(t *testing.T) {
 
 	hooks3, hooks3Err := GetTestHooks()
 	if hooks3Err != nil {
-		t.Errorf(hooks3Err.Error())
+		t.Errorf("%s", hooks3Err.Error())
 		return
 	}
 
@@ -396,7 +396,7 @@ func TestDestroySuccessFailureSkip(t *testing.T) {
 	tpl.Command = "plan"
 	err = tpl.GenerateConfig()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 
@@ -404,7 +404,7 @@ func TestDestroySuccessFailureSkip(t *testing.T) {
 
 	hooks4, hooks4Err := GetTestHooks()
 	if hooks4Err != nil {
-		t.Errorf(hooks4Err.Error())
+		t.Errorf("%s", hooks4Err.Error())
 		return
 	}
 
@@ -420,7 +420,7 @@ func TestDestroySuccessFailureSkip(t *testing.T) {
 	}
 	err = tpl.GenerateConfig()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 
@@ -428,7 +428,7 @@ func TestDestroySuccessFailureSkip(t *testing.T) {
 
 	hooks5, hooks5Err := GetTestHooks()
 	if hooks5Err != nil {
-		t.Errorf(hooks5Err.Error())
+		t.Errorf("%s", hooks5Err.Error())
 		return
 	}
 
@@ -468,19 +468,19 @@ func TestEtcdState(t *testing.T) {
 	defer func() {
 		err := CleanupTestExecution(tpl)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Errorf("%s", err.Error())
 		}
 	}()
 
 	err := tpl.SetTfPath()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 
 	err = tpl.GenerateConfig()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 	
@@ -488,7 +488,7 @@ func TestEtcdState(t *testing.T) {
 	
 	hooks, hooksErr := GetTestHooks()
 	if hooksErr != nil {
-		t.Errorf(hooksErr.Error())
+		t.Errorf("%s", hooksErr.Error())
 		return
 	}
 
@@ -499,7 +499,7 @@ func TestEtcdState(t *testing.T) {
 
 	hasVal, hasValErr := FileHasValue(path.Join("e2e_test", "runtime", "output", "file"), "A")
 	if hasValErr != nil {
-		t.Errorf(hasValErr.Error())
+		t.Errorf("%s", hasValErr.Error())
 		return
 	}
 
@@ -510,7 +510,7 @@ func TestEtcdState(t *testing.T) {
 
 	hasVal, hasValErr = FileHasValue(path.Join("e2e_test", "runtime", "output", "file-other"), "O")
 	if hasValErr != nil {
-		t.Errorf(hasValErr.Error())
+		t.Errorf("%s", hasValErr.Error())
 		return
 	}
 
@@ -522,7 +522,7 @@ func TestEtcdState(t *testing.T) {
 	MainNoExit()
 	hooks2, hooks2Err := GetTestHooks()
 	if hooks2Err != nil {
-		t.Errorf(hooks2Err.Error())
+		t.Errorf("%s", hooks2Err.Error())
 		return
 	}
 
@@ -539,14 +539,14 @@ func TestEtcdState(t *testing.T) {
 	}
 	err = tpl.GenerateConfig()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 
 	MainNoExit()
 	hooks3, hooks3Err := GetTestHooks()
 	if hooks3Err != nil {
-		t.Errorf(hooks3Err.Error())
+		t.Errorf("%s", hooks3Err.Error())
 		return
 	}
 
@@ -557,7 +557,7 @@ func TestEtcdState(t *testing.T) {
 
 	hasVal, hasValErr = FileHasValue(path.Join("e2e_test", "runtime", "output", "file"), "B")
 	if hasValErr != nil {
-		t.Errorf(hasValErr.Error())
+		t.Errorf("%s", hasValErr.Error())
 		return
 	}
 
@@ -568,7 +568,7 @@ func TestEtcdState(t *testing.T) {
 
 	hasVal, hasValErr = FileHasValue(path.Join("e2e_test", "runtime", "output", "file-other"), "O")
 	if hasValErr != nil {
-		t.Errorf(hasValErr.Error())
+		t.Errorf("%s", hasValErr.Error())
 		return
 	}
 
@@ -583,14 +583,14 @@ func TestEtcdState(t *testing.T) {
 	}
 	err = tpl.GenerateConfig()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 
 	MainNoExit()
 	hooks4, hooks4Err := GetTestHooks()
 	if hooks4Err != nil {
-		t.Errorf(hooks4Err.Error())
+		t.Errorf("%s", hooks4Err.Error())
 		return
 	}
 
@@ -695,19 +695,19 @@ func TestGitApplyRecurrence(t *testing.T) {
 	defer func() {
 		err := CleanupTestExecution(tpl)
 		if err != nil {
-			t.Errorf(err.Error())
+			t.Errorf("%s", err.Error())
 		}
 	}()
 
 	err := tpl.SetTfPath()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 
 	err = tpl.GenerateConfig()
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 		return
 	}
 	
@@ -715,7 +715,7 @@ func TestGitApplyRecurrence(t *testing.T) {
 	
 	hooks, hooksErr := GetTestHooks()
 	if hooksErr != nil {
-		t.Errorf(hooksErr.Error())
+		t.Errorf("%s", hooksErr.Error())
 		return
 	}
 
@@ -726,7 +726,7 @@ func TestGitApplyRecurrence(t *testing.T) {
 
 	hasVal, hasValErr := FileHasValue(path.Join("e2e_test", "runtime", "output", "file"), "A")
 	if hasValErr != nil {
-		t.Errorf(hasValErr.Error())
+		t.Errorf("%s", hasValErr.Error())
 		return
 	}
 
@@ -737,7 +737,7 @@ func TestGitApplyRecurrence(t *testing.T) {
 
 	hasVal, hasValErr = FileHasValue(path.Join("e2e_test", "runtime", "output", "file-other"), "O")
 	if hasValErr != nil {
-		t.Errorf(hasValErr.Error())
+		t.Errorf("%s", hasValErr.Error())
 		return
 	}
 
@@ -748,7 +748,7 @@ func TestGitApplyRecurrence(t *testing.T) {
 
 	hasVal, hasValErr = FileHasValue(path.Join("e2e_test", "runtime", "output", "git_file"), "test")
 	if hasValErr != nil {
-		t.Errorf(hasValErr.Error())
+		t.Errorf("%s", hasValErr.Error())
 		return
 	}
 
@@ -760,7 +760,7 @@ func TestGitApplyRecurrence(t *testing.T) {
 	MainNoExit()
 	hooks2, hooks2Err := GetTestHooks()
 	if hooks2Err != nil {
-		t.Errorf(hooks2Err.Error())
+		t.Errorf("%s", hooks2Err.Error())
 		return
 	}
 
@@ -778,7 +778,7 @@ func TestGitApplyRecurrence(t *testing.T) {
 	MainNoExit()
 	hooks3, hooks3Err := GetTestHooks()
 	if hooks3Err != nil {
-		t.Errorf(hooks3Err.Error())
+		t.Errorf("%s", hooks3Err.Error())
 		return
 	}
 
@@ -789,7 +789,7 @@ func TestGitApplyRecurrence(t *testing.T) {
 
 	hasVal, hasValErr = FileHasValue(path.Join("e2e_test", "runtime", "output", "git_file"), "test2")
 	if hasValErr != nil {
-		t.Errorf(hasValErr.Error())
+		t.Errorf("%s", hasValErr.Error())
 		return
 	}
 
