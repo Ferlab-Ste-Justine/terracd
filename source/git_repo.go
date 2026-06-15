@@ -31,33 +31,33 @@ func (auth *GitRepoAuthSsh) IsDefined() bool {
 	return auth.SshKeyPath != ""
 }
 
-type BasicAuth struct {
+type PasswordAuth struct {
 	Username string
 	Password string
 }
 
 type GitRepoAuthHttps struct {
-	BasicAuthPath string `yaml:"basic_auth_path"`
+	PasswordAuth string `yaml:"password_auth"`
 }
 
 func (auth *GitRepoAuthHttps) IsDefined() bool {
-	return auth.BasicAuthPath != ""
+	return auth.PasswordAuth != ""
 }
 
-func (auth *GitRepoAuthHttps) GetBasicAuth() (BasicAuth, error) {
-	var bAuth BasicAuth
+func (auth *GitRepoAuthHttps) GetPasswordAuth() (PasswordAuth, error) {
+	var pAuth PasswordAuth
 
-	b, err := ioutil.ReadFile(auth.BasicAuthPath)
+	b, err := ioutil.ReadFile(auth.PasswordAuth)
 	if err != nil {
-		return bAuth, errors.New(fmt.Sprintf("Error reading the basic auth file: %s", err.Error()))
+		return pAuth, errors.New(fmt.Sprintf("Error reading the password auth file: %s", err.Error()))
 	}
 	
-	err = yaml.Unmarshal(b, &bAuth)
+	err = yaml.Unmarshal(b, &pAuth)
 	if err != nil {
-		return bAuth, errors.New(fmt.Sprintf("Error parsing the basic auth file: %s", err.Error()))
+		return pAuth, errors.New(fmt.Sprintf("Error parsing the password auth file: %s", err.Error()))
 	}
 
-	return bAuth, nil
+	return pAuth, nil
 }
 
 type GitRepoAuth struct {
@@ -121,12 +121,12 @@ func (repo *GitRepo) Sync(dir string) (CommitHash, error) {
 				return CommitHash{}, gitCredsErr
 			}
 		} else {
-			basicAuth, basicAuthErr := repo.Auth.Https.GetBasicAuth()
-			if basicAuthErr != nil {
-				return CommitHash{}, basicAuthErr
+			passwordAuth, passwordAuthErr := repo.Auth.Https.GetPasswordAuth()
+			if passwordAuthErr != nil {
+				return CommitHash{}, passwordAuthErr
 			}
 
-			gitCreds = git.GetHttpsCredentials(basicAuth.Username, basicAuth.Password)
+			gitCreds = git.GetHttpsCredentials(passwordAuth.Username, passwordAuth.Password)
 		}
 	}
 

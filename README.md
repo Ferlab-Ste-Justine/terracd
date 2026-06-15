@@ -74,7 +74,7 @@ Each **sources** entry can take one of the following 3 forms:
         known_hosts_path: "<known host file containing the expect fingerprint of git server>"
         user: "<user to ssh as. Can often be omitted, but some git server implementations require it>"
       https:
-        basic_auth_path: "<Path to yaml file containing 'username' and 'password' entries for basic auth authentication via https>"
+        password_auth: "<Path to yaml file containing 'username' and 'password' entries for basic auth authentication via https>"
     gpg_public_keys_paths: <Optional list of armored keyrings to validate signature of latest commit>
 - backend_http:
     filename: "<File name to give the generated backend file>"
