@@ -76,6 +76,7 @@ Each **sources** entry can take one of the following 3 forms:
       https:
         password_auth: "<Path to yaml file containing 'username' and 'password' entries for basic auth authentication via https>"
     gpg_public_keys_paths: <Optional list of armored keyrings to validate signature of latest commit>
+    exec: <Optional boolean. If true, uses the system git binary instead of the built-in go-git implementation. Required for git servers that mandate the multi_ack_detailed capability (eg: Azure DevOps). Defaults to false.>
 - backend_http:
     filename: "<File name to give the generated backend file>"
     address:
