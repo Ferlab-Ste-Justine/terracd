@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/Ferlab-Ste-Justine/etcd-sdk v0.12.0
-	github.com/Ferlab-Ste-Justine/git-sdk v0.10.0
+	github.com/Ferlab-Ste-Justine/git-sdk v0.11.0
 	github.com/hashicorp/terraform-exec v0.23.0
 	github.com/hashicorp/terraform-json v0.24.0
 	github.com/minio/minio-go/v7 v7.0.91

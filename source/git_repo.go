@@ -75,6 +75,7 @@ type GitRepo struct {
 	Path               string
 	Auth               GitRepoAuth
 	GpgPublicKeysPaths []string `yaml:"gpg_public_keys_paths"`
+	Exec               bool
 }
 
 func (repo *GitRepo) GetDir() string {
@@ -130,7 +131,14 @@ func (repo *GitRepo) Sync(dir string) (CommitHash, error) {
 		}
 	}
 
-	gogitRepo, badRepoDir, syncErr := git.SyncGitRepo(repoDir, repo.Url, repo.Ref, gitCreds)
+	var gogitRepo *git.GitRepository
+	var badRepoDir bool
+	var syncErr error
+	if repo.Exec {
+		gogitRepo, badRepoDir, syncErr = git.SyncGitRepoExec(repoDir, repo.Url, repo.Ref, gitCreds)
+	} else {
+		gogitRepo, badRepoDir, syncErr = git.SyncGitRepo(repoDir, repo.Url, repo.Ref, gitCreds)
+	}
 	if syncErr != nil {
 		if !badRepoDir {
 			return CommitHash{}, errors.New(fmt.Sprintf("Error updating branch \"%s\" of repo \"%s\": %s", repo.Ref, repo.Url, syncErr.Error()))
