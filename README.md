@@ -136,12 +136,12 @@ The **metrics** entry takes the following fields:
       - **client_key**: Client private key to use to authentify itself to the pushgateway when using mTLS.
       - **password_auth**: Yaml file containing a **username** and **password** key to authentify against a pushgateway using password authentication.
   - **prometheus_remote_write**: Configuration if you are pushing to a prometheus remote write endpoint
-    - **url**: Url of the prometheus pushgateway.
+    - **url**: Url of the prometheus remote write endpoint.
     - **auth**: mTLS or tls + password authentication parameters. It can be omited if you are using to a proxy that already takes care of security (like aws-sigv4-proxy if you are on aws). It takes the following fields:
       - **ca_cert**: Path to a CA certificate validating the server certificates of the pushgateway.
-      - **client_cert**: Client certificate to use to authentify itself to the pushgateway when using mTLS.
-      - **client_key**: Client private key to use to authentify itself to the pushgateway when using mTLS.
-      - **password_auth**: Yaml file containing a **username** and **password** key to authentify against a pushgateway using password authentication.
+      - **client_cert**: Client certificate to use to authentify itself to the remote write endpoint when using mTLS.
+      - **client_key**: Client private key to use to authentify itself to the remote write endpoint when using mTLS.
+      - **password_auth**: Yaml file containing a **username** and **password** key to authentify against the remote write endpoint using password authentication.
 
 
 The **backend_migration** parameter takes the following fields:
