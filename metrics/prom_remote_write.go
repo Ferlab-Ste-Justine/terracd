@@ -13,17 +13,18 @@ import (
 )
 
 type PromRemoteWrite struct {
-	Config    *MetricsClientConfig
-	client    *http.Client
+	BaseConfig      MetricsClientBaseConfig
+	CollectorConfig PrometheusRemoteWriteConfig
+	client          *http.Client
 }
 
 func (cli *PromRemoteWrite) Initialize() error {
-	passErr := cli.Config.Collector.Auth.ResolvePassword()
+	passErr := cli.CollectorConfig.Auth.ResolvePassword()
 	if passErr != nil {
 		return passErr
 	}
 
-	tls, tlsErr := cli.Config.Collector.Auth.GetTlsConfigs()
+	tls, tlsErr := cli.CollectorConfig.Auth.GetTlsConfigs()
 	if tlsErr != nil {
 		return tlsErr
 	}
@@ -44,6 +45,7 @@ func (cli *PromRemoteWrite) Push(cmd string, result string, providers []Provider
 
 	promTS = append(promTS, prompb.TimeSeries{
 		Labels: []prompb.Label{
+			prompb.Label{Name: "job", Value: cli.BaseConfig.JobName},
 			prompb.Label{Name: "command", Value: cmd},
 			prompb.Label{Name: "result", Value: result},
 		}, 
@@ -53,6 +55,7 @@ func (cli *PromRemoteWrite) Push(cmd string, result string, providers []Provider
 	for _, provider := range providers {
 		promTS = append(promTS, prompb.TimeSeries{
 			Labels: []prompb.Label{
+				prompb.Label{Name: "job", Value: cli.BaseConfig.JobName},
 				prompb.Label{Name: "registry", Value: provider.Registry},
 				prompb.Label{Name: "organisation", Value: provider.Organization},
 				prompb.Label{Name: "provider", Value: provider.Name},
@@ -71,7 +74,7 @@ func (cli *PromRemoteWrite) Push(cmd string, result string, providers []Provider
 
 	compressedBody := snappy.Encode(nil, body)
 
-	req, reqErr := http.NewRequest("POST", cli.Config.Collector.Url, bytes.NewBuffer(compressedBody))
+	req, reqErr := http.NewRequest("POST", cli.CollectorConfig.Url, bytes.NewBuffer(compressedBody))
 	if reqErr != nil {
 		return reqErr
 	}
@@ -80,8 +83,8 @@ func (cli *PromRemoteWrite) Push(cmd string, result string, providers []Provider
 	req.Header.Add("Content-Encoding", "snappy")
 	req.Header.Set("Content-Type", "application/x-protobuf")
 
-	if cli.Config.Collector.Auth.HasPassword() {
-		req.SetBasicAuth(cli.Config.Collector.Auth.Username, cli.Config.Collector.Auth.Password)
+	if cli.CollectorConfig.Auth.HasPassword() {
+		req.SetBasicAuth(cli.CollectorConfig.Auth.Username, cli.CollectorConfig.Auth.Password)
 	}
 
 	resp, respErr := cli.client.Do(req)

@@ -9,29 +9,30 @@ import (
 )
 
 type PromPushGateway struct {
-	Config    *MetricsClientConfig
-	pusher    *push.Pusher
+	BaseConfig      MetricsClientBaseConfig
+	CollectorConfig PrometheusPushgatewayConfig
+	pusher          *push.Pusher
 }
 
 func (cli *PromPushGateway) Initialize() error {
-	cli.pusher = push.New(cli.Config.Collector.Url, cli.Config.JobName)
+	cli.pusher = push.New(cli.CollectorConfig.Url, cli.BaseConfig.JobName)
 
-	passErr := cli.Config.Collector.Auth.ResolvePassword()
+	passErr := cli.CollectorConfig.Auth.ResolvePassword()
 	if passErr != nil {
 		return passErr
 	}
 
-	tls, tlsErr := cli.Config.Collector.Auth.GetTlsConfigs()
+	tls, tlsErr := cli.CollectorConfig.Auth.GetTlsConfigs()
 	if tlsErr != nil {
 		return tlsErr
 	}
 
 	cli.pusher = cli.pusher.Client(&http.Client{Transport: &http.Transport{TLSClientConfig: tls}})
 
-	if cli.Config.Collector.Auth.HasPassword() {
+	if cli.CollectorConfig.Auth.HasPassword() {
 		cli.pusher = cli.pusher.BasicAuth(
-			cli.Config.Collector.Auth.Username,
-			cli.Config.Collector.Auth.Password,
+			cli.CollectorConfig.Auth.Username,
+			cli.CollectorConfig.Auth.Password,
 		)
 	}
 
