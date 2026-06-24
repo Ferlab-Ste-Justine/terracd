@@ -30,7 +30,7 @@ func (auth *Auth) HasPassword() bool {
 func (auth *Auth) ResolvePassword() error {
 	var a PasswordAuth
 
-	if auth.ClientCert != "" {
+	if auth.PasswordAuth == "" {
 		return nil
 	}
 

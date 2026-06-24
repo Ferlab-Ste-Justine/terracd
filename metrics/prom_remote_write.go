@@ -45,6 +45,7 @@ func (cli *PromRemoteWrite) Push(cmd string, result string, providers []Provider
 
 	promTS = append(promTS, prompb.TimeSeries{
 		Labels: []prompb.Label{
+			prompb.Label{Name: "__name__", Value: "terracd_command_timestamp_seconds"},
 			prompb.Label{Name: "job", Value: cli.BaseConfig.JobName},
 			prompb.Label{Name: "command", Value: cmd},
 			prompb.Label{Name: "result", Value: result},
@@ -55,6 +56,7 @@ func (cli *PromRemoteWrite) Push(cmd string, result string, providers []Provider
 	for _, provider := range providers {
 		promTS = append(promTS, prompb.TimeSeries{
 			Labels: []prompb.Label{
+				prompb.Label{Name: "__name__", Value: "terracd_provider_use_timestamp_seconds"},
 				prompb.Label{Name: "job", Value: cli.BaseConfig.JobName},
 				prompb.Label{Name: "registry", Value: provider.Registry},
 				prompb.Label{Name: "organisation", Value: provider.Organization},
